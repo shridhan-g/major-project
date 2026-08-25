@@ -1,0 +1,9 @@
+{
+  "name": "genie-workspace-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix Genie-main/Genie-main/Genie-main run dev",
+    "start": "npm --prefix Genie-main/Genie-main/Genie-main run dev"
+  }
+}

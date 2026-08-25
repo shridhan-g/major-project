@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle&family=Outfit:wght@100..900&family=Space+Grotesk:wght@300..700&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+    font-family: "Wanted Sans Medium";
+    src: url("fonts/WantedSans-Medium-BF65baf1388963b.otf");
+}
+
+@font-face {
+    font-family: "Wanted Sans Regular";
+    src: url("fonts/WantedSans-Regular.otf");
+}
+
+@font-face {
+    font-family: "TBJNorguba";
+    src: url("fonts/TBJNorguba-Regular.woff");
+}
+
+@font-face {
+    font-family: "NeuwMachina";
+    src: url("fonts/NeueMachina-Regular.otf");
+}
+
+@font-face {
+    font-family: "NeuwMachinaBold";
+    src: url("fonts/NeueMachina-Ultrabold.otf");
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: "Wanted Sans Regular", sans-serif;
+    background-color: #f8fafc; /* slate-50 */
+    color: #0f172a; /* slate-900 */
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+    background-color: #0f172a; /* slate-900 */
+    color: #f1f5f9; /* slate-100 */
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 20px;
+}
+::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border: 2px solid #e2e8f0;
+    border-radius: 20px;
+}
+.dark ::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+.dark ::-webkit-scrollbar-thumb {
+    background: #4f46e5;
+    border-color: #1e293b;
+}
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #2563eb #e2e8f0;
+}
+.dark * {
+    scrollbar-color: #4f46e5 #1e293b;
+}
+
+input {
+    cursor: url("/cursor.svg"), pointer;
+}
+
+textarea {
+    cursor: url("/cursor.svg"), pointer;
+}
+
+.logo {
+    font-family: "Space Grotesk";
+    text-transform: lowercase;
+}
+
+/* ---------- Design System Utilities ---------- */
+
+/* Glassmorphism */
+.glass {
+    background: rgba(255, 255, 255, 0.75);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+.dark .glass {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+/* Glowing text clip gradient */
+.text-gradient {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Verified badge pill */
+.badge-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid #059669;
+    border-radius: 9999px;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.dark .badge-verified {
+    color: #34d399;
+    border-color: #34d399;
+}
+
+/* Card hover lift */
+.card-hover {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px -15px rgba(37, 99, 235, 0.25);
+}
+
+/* Live status pulse dot */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 9999px;
+    background: #10b981;
+}
+.status-dot.active {
+    animation: statusPulse 2s infinite;
+}
+@keyframes statusPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Skeleton shimmer */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(148, 163, 184, 0.15) 25%,
+        rgba(148, 163, 184, 0.35) 50%,
+        rgba(148, 163, 184, 0.15) 75%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 1.5s infinite linear;
+}
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+/* Staggered fade-in-up */
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out both;
+}
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Floating decorative elements */
+.animate-float {
+    animation: float 5s ease-in-out infinite;
+}
+.animate-float-slow {
+    animation: floatSlow 8s ease-in-out infinite;
+}
+@keyframes float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
+}
+@keyframes floatSlow {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-22px);
+    }
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
