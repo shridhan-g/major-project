@@ -5,7 +5,9 @@ import { cart2, quality, tick } from "../assets";
 import ClipLoader from "react-spinners/ClipLoader";
 import { CartContext } from "../context/CartContext";
 import ServiceCart from "../components/ServiceCart";
-import { PackageOpen, ShieldCheck, BadgeCheck, Star, MapPin, IndianRupee, Clock, Check, User, SlidersHorizontal } from "lucide-react";
+import { PackageOpen, ShieldCheck, BadgeCheck, Star, MapPin, IndianRupee, Clock, Check, User, SlidersHorizontal, Search, Loader2, X, Locate } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
 // ── Category & Service Image Photography Mapping ─────────────────────────────
 // High-resolution, curated photography with instant fallback for all service types
@@ -176,19 +178,47 @@ const StarRating = ({ rating }) => {
 const ServiceList = () => {
     const { serviceName, subcategory, serviceType } = useParams();
     const { cartServices, addToCart, removeFromCart } = useContext(CartContext);
+    const { lang } = useLang();
     const [services, setServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [categories, setCategories] = useState([]);
     const categoryRefs = useRef({});
 
-    // Provider state
+    // Provider state & Location filter for nearest providers
     const [providers, setProviders] = useState([]);
     const [selectedProviderId, setSelectedProviderId] = useState("");
     const [minRating, setMinRating] = useState(0);
     const [maxWage, setMaxWage] = useState("");
-    const [sortBy, setSortBy] = useState("");
+    const [sortBy, setSortBy] = useState("nearest");
     const [showProviderFilters, setShowProviderFilters] = useState(false);
+    const [showLocationForm, setShowLocationForm] = useState(false);
+
+    // Nearest location filter state (Pincode, City, District, State)
+    const [userPincode, setUserPincode] = useState(() => localStorage.getItem("userPincode") || "");
+    const [userCity, setUserCity] = useState(() => localStorage.getItem("userCity") || "");
+    const [userDistrict, setUserDistrict] = useState(() => localStorage.getItem("userDistrict") || "");
+    const [userState, setUserState] = useState(() => localStorage.getItem("userState") || "");
+    const [pincodeLoading, setPincodeLoading] = useState(false);
+
+    // Separate loading state for providers list (Never unmounts or refreshes the page)
+    const [providersLoading, setProvidersLoading] = useState(false);
+
+    // Debounced location values for smooth, flicker-free provider search
+    const [debouncedPincode, setDebouncedPincode] = useState(userPincode);
+    const [debouncedCity, setDebouncedCity] = useState(userCity);
+    const [debouncedDistrict, setDebouncedDistrict] = useState(userDistrict);
+    const [debouncedState, setDebouncedState] = useState(userState);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedPincode(userPincode);
+            setDebouncedCity(userCity);
+            setDebouncedDistrict(userDistrict);
+            setDebouncedState(userState);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [userPincode, userCity, userDistrict, userState]);
 
     // Restore selected provider on mount
     useEffect(() => {
@@ -203,11 +233,60 @@ const ServiceList = () => {
         }
     }, []);
 
+    // Handle Pincode change & auto-populate City, District, State
+    const handlePincodeChange = async (e) => {
+        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+        setUserPincode(val);
+        localStorage.setItem("userPincode", val);
+
+        if (val.length === 6) {
+            setPincodeLoading(true);
+            try {
+                const res = await fetch(`https://api.postalpincode.in/pincode/${val}`);
+                const data = await res.json();
+                if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice?.length > 0) {
+                    const po = data[0].PostOffice[0];
+                    const detectedCity = po.Block || po.District || po.Name || "";
+                    const detectedDistrict = po.District || "";
+                    const detectedState = po.State || "";
+                    setUserCity(detectedCity);
+                    setUserDistrict(detectedDistrict);
+                    setUserState(detectedState);
+                    localStorage.setItem("userCity", detectedCity);
+                    localStorage.setItem("userDistrict", detectedDistrict);
+                    localStorage.setItem("userState", detectedState);
+                }
+            } catch (err) {
+                // Ignore network error
+            } finally {
+                setPincodeLoading(false);
+            }
+        }
+    };
+
+    const clearLocation = () => {
+        setUserPincode("");
+        setUserCity("");
+        setUserDistrict("");
+        setUserState("");
+        setDebouncedPincode("");
+        setDebouncedCity("");
+        setDebouncedDistrict("");
+        setDebouncedState("");
+        localStorage.removeItem("userPincode");
+        localStorage.removeItem("userCity");
+        localStorage.removeItem("userDistrict");
+        localStorage.removeItem("userState");
+    };
+
+    // 1. Fetch Service Details (Runs only on route params change)
     useEffect(() => {
-        const fetchServicesAndProviders = async () => {
+        let isMounted = true;
+        const fetchServicesData = async () => {
             try {
                 setLoading(true);
                 const data = await getServiceDetails(serviceName);
+                if (!isMounted) return;
 
                 let servicesList = [];
                 let categoriesList = [];
@@ -253,21 +332,46 @@ const ServiceList = () => {
                 setCategories(
                     categoriesList.sort((a, b) => a.name.localeCompare(b.name))
                 );
-
-                // Fetch providers ONLY for this specific service department / field
-                const queryTerm = serviceName || subcategory;
-                const provData = await getProviders({ category: queryTerm });
-                setProviders(provData || []);
             } catch (err) {
-                console.error("Error fetching data:", err);
-                setError("Failed to load services");
+                console.error("Error fetching services data:", err);
+                if (isMounted) setError("Failed to load services");
             } finally {
-                setLoading(false);
+                if (isMounted) setLoading(false);
             }
         };
 
-        fetchServicesAndProviders();
+        fetchServicesData();
+        return () => { isMounted = false; };
     }, [serviceName, subcategory, serviceType]);
+
+    // 2. Fetch Providers based on debounced location filters (Flicker-free, never unmounts page)
+    useEffect(() => {
+        let isMounted = true;
+        const fetchProvidersList = async () => {
+            try {
+                setProvidersLoading(true);
+                const queryTerm = serviceName || subcategory;
+                const provData = await getProviders({
+                    category: queryTerm,
+                    pincode: debouncedPincode,
+                    city: debouncedCity,
+                    district: debouncedDistrict,
+                    state: debouncedState,
+                });
+                if (isMounted) {
+                    setProviders(provData || []);
+                }
+            } catch (err) {
+                console.error("Error fetching providers:", err);
+                if (isMounted) setProviders([]);
+            } finally {
+                if (isMounted) setProvidersLoading(false);
+            }
+        };
+
+        fetchProvidersList();
+        return () => { isMounted = false; };
+    }, [serviceName, subcategory, debouncedPincode, debouncedCity, debouncedDistrict, debouncedState]);
 
     const scrollToCategory = (category) => {
         categoryRefs.current[category]?.scrollIntoView({ behavior: "smooth" });
@@ -302,10 +406,27 @@ const ServiceList = () => {
         let list = [...providers];
         if (minRating > 0) list = list.filter((p) => (p.averageRating || 0) >= minRating);
         if (maxWage !== "") list = list.filter((p) => (p.hourlyRate || 0) <= Number(maxWage));
-        if (sortBy === "rating_desc") list.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
-        else if (sortBy === "wage_asc") list.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0));
-        else if (sortBy === "wage_desc") list.sort((a, b) => (b.hourlyRate || 0) - (a.hourlyRate || 0));
-        else if (sortBy === "experience_desc") list.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
+
+        if (sortBy === "nearest" || !sortBy) {
+            list.sort((a, b) => {
+                if (a.matchScore !== undefined && b.matchScore !== undefined && a.matchScore !== b.matchScore) {
+                    return b.matchScore - a.matchScore;
+                }
+                if (a.isExactPincodeMatch && !b.isExactPincodeMatch) return -1;
+                if (!a.isExactPincodeMatch && b.isExactPincodeMatch) return 1;
+                const distA = a.distanceKm !== undefined ? a.distanceKm : 999999;
+                const distB = b.distanceKm !== undefined ? b.distanceKm : 999999;
+                return distA - distB;
+            });
+        } else if (sortBy === "rating_desc") {
+            list.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+        } else if (sortBy === "wage_asc") {
+            list.sort((a, b) => (a.hourlyRate || 0) - (b.hourlyRate || 0));
+        } else if (sortBy === "wage_desc") {
+            list.sort((a, b) => (b.hourlyRate || 0) - (a.hourlyRate || 0));
+        } else if (sortBy === "experience_desc") {
+            list.sort((a, b) => (b.experienceYears || 0) - (a.experienceYears || 0));
+        }
         return list;
     })();
 
@@ -317,19 +438,21 @@ const ServiceList = () => {
         );
     if (error) return <div className="text-red-500">{error}</div>;
 
+    const hasLocation = Boolean(userPincode || userCity || userDistrict || userState);
+
     return (
         <div className="max-w-7xl mx-auto relative grid grid-cols-1 lg:grid-cols-5 gap-6 pb-6">
             {/* Sidebar Component */}
             <div className="lg:sticky lg:top-24 self-start max-lg:static max-lg:w-full">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white pb-1">
-                    {serviceName}
+                    {t(lang, serviceName)}
                 </h2>
                 <h3 className="text-3xl font-[NeuwMachinaBold] text-gradient pb-6">
-                    {serviceType || subcategory}
+                    {t(lang, serviceType || subcategory)}
                 </h3>
                 <div className="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
                     <h1 className="font-bold text-slate-900 dark:text-white text-nowrap mb-4 tracking-wide">
-                        Select a service
+                        {t(lang, "Select a service")}
                     </h1>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                         {categories.map((category) => (
@@ -343,7 +466,7 @@ const ServiceList = () => {
                                     name={category.name}
                                 />
                                 <h1 className="h-10 py-1 text-xs font-semibold leading-4 px-1.5 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                    {category.name}
+                                    {t(lang, category.name)}
                                 </h1>
                             </button>
                         ))}
@@ -360,39 +483,149 @@ const ServiceList = () => {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                                    Available Service Providers
+                                    {t(lang, "Available Service Providers")}
                                 </h2>
                                 <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-bold px-2 py-0.5 rounded-full">
                                     {filteredProviders.length}
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                Select your preferred expert for {subcategory || serviceName}
+                                {t(lang, "Select your preferred expert for")} {t(lang, subcategory || serviceName)}
                             </p>
                         </div>
 
                         {/* Filter & Sort Controls */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                onClick={() => setShowLocationForm((v) => !v)}
+                                className={`flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1.5 border transition-all cursor-pointer ${
+                                    hasLocation
+                                        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-blue-300 dark:border-blue-700"
+                                        : "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:border-blue-500"
+                                }`}
+                            >
+                                <MapPin size={13} className={hasLocation ? "text-blue-600 dark:text-blue-400" : "text-slate-400"} />
+                                {hasLocation ? (
+                                    <span>
+                                        📍 {userPincode || userCity || userDistrict || "Location Active"}
+                                    </span>
+                                ) : (
+                                    <span>Find Nearest</span>
+                                )}
+                            </button>
+
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="text-xs rounded-full p-2 px-3 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200"
+                                className="text-xs rounded-full p-2 px-3 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 cursor-pointer"
                             >
-                                <option value="">Sort By</option>
-                                <option value="rating_desc">⭐ Rating</option>
+                                <option value="nearest">🎯 Sort by Nearest</option>
+                                <option value="rating_desc">⭐ Highest Rating</option>
                                 <option value="wage_asc">₹ Wage: Low to High</option>
                                 <option value="wage_desc">₹ Wage: High to Low</option>
-                                <option value="experience_desc">🏅 Experience</option>
+                                <option value="experience_desc">🏅 Most Experienced</option>
                             </select>
                             <button
                                 onClick={() => setShowProviderFilters((v) => !v)}
-                                className={`p-2 rounded-full border text-xs transition-colors ${showProviderFilters ? "bg-blue-600 text-white border-blue-600" : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-500"}`}
+                                className={`p-2 rounded-full border text-xs transition-colors cursor-pointer ${showProviderFilters ? "bg-blue-600 text-white border-blue-600" : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-500"}`}
                                 title="Toggle Filters"
                             >
                                 <SlidersHorizontal size={14} />
                             </button>
                         </div>
                     </div>
+
+                    {/* Nearest Provider Location Search Panel (PIN CODE, CITY, DISTRICT, STATE) */}
+                    {(showLocationForm || hasLocation) && (
+                        <div className="mt-4 p-4 rounded-2xl bg-blue-50/50 dark:bg-slate-900/60 border border-blue-200/80 dark:border-slate-700/80 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                                    <Locate size={14} className="text-blue-600 dark:text-blue-400" />
+                                    Find Nearest Providers By Location
+                                </span>
+                                {hasLocation && (
+                                    <button
+                                        onClick={clearLocation}
+                                        className="text-xs text-red-500 hover:text-red-700 font-semibold flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <X size={13} /> Clear Location
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* PIN CODE Search Input */}
+                            <div className="flex flex-col gap-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    PIN CODE *
+                                </label>
+                                <div className="relative flex items-center">
+                                    <Search size={16} className="absolute left-3.5 text-slate-400 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        placeholder="6-digit PIN code"
+                                        maxLength="6"
+                                        value={userPincode}
+                                        onChange={handlePincodeChange}
+                                        className="w-full text-xs rounded-xl pl-10 pr-9 py-2.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+                                    />
+                                    {pincodeLoading && (
+                                        <div className="absolute right-3">
+                                            <Loader2 size={14} className="animate-spin text-blue-500" />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* 3-Column: CITY, DISTRICT, STATE */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        CITY
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="City"
+                                        value={userCity}
+                                        onChange={(e) => {
+                                            setUserCity(e.target.value);
+                                            localStorage.setItem("userCity", e.target.value);
+                                        }}
+                                        className="text-xs rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        DISTRICT
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="District"
+                                        value={userDistrict}
+                                        onChange={(e) => {
+                                            setUserDistrict(e.target.value);
+                                            localStorage.setItem("userDistrict", e.target.value);
+                                        }}
+                                        className="text-xs rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        STATE
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="State"
+                                        value={userState}
+                                        onChange={(e) => {
+                                            setUserState(e.target.value);
+                                            localStorage.setItem("userState", e.target.value);
+                                        }}
+                                        className="text-xs rounded-xl px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Expandable filter bar */}
                     {showProviderFilters && (
@@ -403,7 +636,7 @@ const ServiceList = () => {
                                     <button
                                         key={v}
                                         onClick={() => setMinRating(v)}
-                                        className={`px-2 py-0.5 rounded-full border transition-all ${minRating === v ? "bg-orange-500 text-white border-orange-500" : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300"}`}
+                                        className={`px-2 py-0.5 rounded-full border transition-all cursor-pointer ${minRating === v ? "bg-orange-500 text-white border-orange-500" : "border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300"}`}
                                     >
                                         {v === 0 ? "Any" : `${v}★+`}
                                     </button>
@@ -419,10 +652,10 @@ const ServiceList = () => {
                                     className="w-20 p-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs"
                                 />
                             </div>
-                            {(minRating > 0 || maxWage !== "" || sortBy !== "") && (
+                            {(minRating > 0 || maxWage !== "" || sortBy !== "nearest") && (
                                 <button
-                                    onClick={() => { setMinRating(0); setMaxWage(""); setSortBy(""); }}
-                                    className="text-red-500 hover:underline font-semibold ml-auto"
+                                    onClick={() => { setMinRating(0); setMaxWage(""); setSortBy("nearest"); }}
+                                    className="text-red-500 hover:underline font-semibold ml-auto cursor-pointer"
                                 >
                                     Reset
                                 </button>
@@ -431,14 +664,20 @@ const ServiceList = () => {
                     )}
 
                     {/* Providers Grid */}
-                    {filteredProviders.length === 0 ? (
+                    {providersLoading ? (
+                        <div className="py-10 text-center flex flex-col items-center justify-center gap-2 text-slate-500 text-xs">
+                            <Loader2 size={20} className="animate-spin text-blue-600" />
+                            <span>Finding nearest providers...</span>
+                        </div>
+                    ) : filteredProviders.length === 0 ? (
                         <div className="py-8 text-center text-slate-500 text-sm">
-                            No providers matching criteria.
+                            No providers matching criteria in your area.
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                             {filteredProviders.map((provider) => {
                                 const isSelected = selectedProviderId === provider._id;
+                                const providerPincode = provider.pincode || provider.location?.pincode;
                                 return (
                                     <div
                                         key={provider._id}
@@ -456,18 +695,25 @@ const ServiceList = () => {
                                                     </div>
                                                     <div>
                                                         <h3 className="font-bold text-base leading-snug text-slate-900 dark:text-white">
-                                                            {provider.name}
+                                                            {t(lang, provider.name)}
                                                         </h3>
                                                         <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                                                            {provider.category}
+                                                            {t(lang, provider.category)}
                                                         </p>
                                                     </div>
                                                 </div>
-                                                {provider.isVerified && (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full px-2 py-0.5 font-semibold shrink-0">
-                                                        <BadgeCheck size={12} /> Verified
-                                                    </span>
-                                                )}
+                                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                                    {provider.isVerified && (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full px-2 py-0.5 font-semibold">
+                                                            <BadgeCheck size={12} /> {t(lang, "Verified")}
+                                                        </span>
+                                                    )}
+                                                    {(provider.isExactPincodeMatch || (provider.distanceKm !== undefined && provider.distanceKm <= 50) || provider.isCityMatch || provider.isDistrictMatch) && (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-full px-2 py-0.5">
+                                                            🎯 {provider.isExactPincodeMatch ? "Nearest Match" : provider.distanceKm ? `${provider.distanceKm} km` : "Local Match"}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-xs">
@@ -483,11 +729,11 @@ const ServiceList = () => {
 
                                             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-2">
                                                 <span className="flex items-center gap-1">
-                                                    <Clock size={12} /> {provider.experienceYears} yrs exp
+                                                    <Clock size={12} /> {provider.experienceYears} {t(lang, "providers_yrs_exp") || "yrs exp"}
                                                 </span>
                                                 {provider.location?.address && (
-                                                    <span className="flex items-center gap-1 truncate max-w-[130px]">
-                                                        <MapPin size={12} /> {provider.location.address}
+                                                    <span className="flex items-center gap-1 truncate max-w-[160px]" title={`${provider.location.address} ${providerPincode ? `(${providerPincode})` : ""}`}>
+                                                        <MapPin size={12} className="text-red-500 shrink-0" /> {provider.location.address} {providerPincode ? `· ${providerPincode}` : ""}
                                                     </span>
                                                 )}
                                             </div>
@@ -496,7 +742,7 @@ const ServiceList = () => {
                                                 <div className="flex flex-wrap gap-1 mt-2">
                                                     {provider.skills.slice(0, 3).map((s) => (
                                                         <span key={s} className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded px-1.5 py-0.5">
-                                                            {s}
+                                                            {t(lang, s)}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -506,7 +752,7 @@ const ServiceList = () => {
                                         <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60 mt-1">
                                             <button
                                                 onClick={() => handleSelectProvider(provider)}
-                                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
+                                                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                                                     isSelected
                                                         ? "bg-emerald-600 text-white shadow-sm"
                                                         : "bg-blue-600 hover:bg-blue-700 text-white shadow-glow-blue"

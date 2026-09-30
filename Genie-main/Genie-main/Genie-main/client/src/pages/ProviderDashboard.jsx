@@ -8,7 +8,9 @@ import {
     updateProviderBookingStatus,
 } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
-import { BadgeCheck, Star, RefreshCw, CheckCircle, Clock, CalendarCheck } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
+import { BadgeCheck, Star, RefreshCw, CheckCircle, Clock, CalendarCheck, XCircle, Search, X } from "lucide-react";
 
 const inputClass =
     "text-sm rounded-lg p-2.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500";
@@ -24,6 +26,7 @@ const STATUS_STYLES = {
 
 export default function ProviderDashboard() {
     const { isAuthenticated } = useAuth();
+    const { lang } = useLang();
     const [tab, setTab] = useState("bookings");
     const [profile, setProfile] = useState(null);
     const [bookings, setBookings] = useState([]);
@@ -34,6 +37,7 @@ export default function ProviderDashboard() {
     const [error, setError] = useState("");
     const [updatingStatusId, setUpdatingStatusId] = useState(null);
     const [lastSyncTime, setLastSyncTime] = useState(new Date());
+    const [customerSearch, setCustomerSearch] = useState("");
 
     const [form, setForm] = useState({
         name: "",
@@ -45,6 +49,7 @@ export default function ProviderDashboard() {
         phone: "",
         email: "",
         address: "",
+        pincode: "",
         lat: "",
         lng: "",
     });
@@ -64,7 +69,8 @@ export default function ProviderDashboard() {
                     bio: data.bio || "",
                     phone: data.contact?.phone || data.phone || "",
                     email: data.contact?.email || data.email || "",
-                    address: data.location?.address || "",
+                    address: data.location?.address || data.contact?.address || "",
+                    pincode: data.pincode || data.location?.pincode || data.contact?.pincode || "",
                     lat: data.location?.coordinates?.[1] ?? "",
                     lng: data.location?.coordinates?.[0] ?? "",
                 });
@@ -111,11 +117,12 @@ export default function ProviderDashboard() {
                 experienceYears: form.experienceYears,
                 hourlyRate: form.hourlyRate,
                 bio: form.bio,
-                contact: { phone: form.phone, email: form.email, address: form.address },
-                location: { lat: form.lat, lng: form.lng, address: form.address },
+                pincode: form.pincode,
+                contact: { phone: form.phone, email: form.email, address: form.address, pincode: form.pincode },
+                location: { lat: form.lat, lng: form.lng, address: form.address, pincode: form.pincode },
             });
             setProfile(updated);
-            setMessage("Profile updated successfully.");
+            setMessage(t(lang, "Profile updated successfully."));
         } catch (err) {
             setError(err.message || "Failed to update profile");
         } finally {
@@ -155,16 +162,16 @@ export default function ProviderDashboard() {
         return (
             <div className="pb-10 text-center">
                 <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider pb-3 text-slate-900 dark:text-white">
-                    Provider Dashboard
+                    {t(lang, "Provider Dashboard")}
                 </h1>
                 <p className="text-slate-500 dark:text-slate-400 pb-4">
                     You don&apos;t have a provider profile yet.
                 </p>
                 <Link
                     to="/provider/register"
-                    className="inline-block bg-brand-gradient text-white px-6 py-3 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue"
+                    className="inline-block bg-brand-gradient text-white px-6 py-3 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue cursor-pointer"
                 >
-                    Register as a Provider
+                    {t(lang, "hero_become_provider")}
                 </Link>
             </div>
         );
@@ -172,29 +179,57 @@ export default function ProviderDashboard() {
 
     const pendingBookings = bookings.filter((b) => b.status === "SERVICE_BOOKED");
 
+    const filteredBookings = customerSearch.trim()
+        ? bookings.filter((b) => {
+              const name = (
+                  b.customerDetails?.name ||
+                  `${b.user?.first_name || ""} ${b.user?.last_name || ""}` ||
+                  ""
+              ).toLowerCase();
+              const email = (b.customerDetails?.email || b.user?.email || "").toLowerCase();
+              const phone = (b.customerDetails?.phone || b.user?.phone || "").toLowerCase();
+              const q = customerSearch.trim().toLowerCase();
+              return name.includes(q) || email.includes(q) || phone.includes(q);
+          })
+        : bookings;
+
     return (
         <div className="max-w-4xl mx-auto pb-10">
             {/* Top Dashboard Banner */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>
                     <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider text-slate-900 dark:text-white">
-                        Provider <span className="text-gradient">Dashboard</span>
+                        {t(lang, "Provider Dashboard")}
                     </h1>
-                    <div className="flex items-center gap-3 mt-1.5">
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                         {profile.isVerified ? (
                             <span className="badge-verified">
-                                <BadgeCheck size={14} /> Verified Provider
+                                <BadgeCheck size={14} /> {t(lang, "Verified Provider")}
+                            </span>
+                        ) : profile.verificationStatus === "REJECTED" ? (
+                            <span className="text-xs font-semibold text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/40 border border-red-500 dark:border-red-600 rounded-full px-2.5 py-1 uppercase">
+                                ✗ Application Rejected
+                            </span>
+                        ) : profile.verificationStatus === "UNDER_REVIEW" ? (
+                            <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-500 dark:border-indigo-600 rounded-full px-2.5 py-1 uppercase animate-pulse">
+                                🔍 Under Review
                             </span>
                         ) : (
                             <span className="text-xs font-semibold text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 border border-orange-600 dark:border-orange-500 rounded-full px-2.5 py-1 uppercase">
-                                Pending Verification
+                                {t(lang, "Pending Verification")}
                             </span>
                         )}
                         <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                            Real-Time Syncing
+                            {t(lang, "Real-Time Syncing")}
                         </span>
                     </div>
+                    {/* Rejection reason notice */}
+                    {profile.verificationStatus === "REJECTED" && profile.rejectionReason && (
+                        <div className="mt-2 text-xs bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 text-red-700 dark:text-red-300 max-w-md">
+                            <strong>Reason:</strong> {profile.rejectionReason}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 px-4 py-2 shadow-sm">
                     <Star size={16} className="text-orange-500" fill="currentColor" />
@@ -212,14 +247,14 @@ export default function ProviderDashboard() {
                 <div className="flex gap-2">
                     <button
                         onClick={() => setTab("bookings")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium uppercase tracking-wide transition-all flex items-center gap-2 ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium uppercase tracking-wide transition-all flex items-center gap-2 cursor-pointer ${
                             tab === "bookings"
                                 ? "bg-blue-600 text-white shadow-glow-blue"
                                 : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                         }`}
                     >
                         <CalendarCheck size={15} />
-                        My Bookings
+                        {t(lang, "My Bookings")}
                         {bookings.length > 0 && (
                             <span className="ml-1 bg-white text-blue-600 font-extrabold text-xs px-2 py-0.5 rounded-full">
                                 {bookings.length}
@@ -233,13 +268,13 @@ export default function ProviderDashboard() {
                     </button>
                     <button
                         onClick={() => setTab("profile")}
-                        className={`px-4 py-2 rounded-full text-sm font-medium uppercase tracking-wide transition-all ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium uppercase tracking-wide transition-all cursor-pointer ${
                             tab === "profile"
                                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
                                 : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                         }`}
                     >
-                        My Profile
+                        {t(lang, "My Profile")}
                     </button>
                 </div>
                 <span className="text-xs text-slate-400 flex items-center gap-1">
@@ -251,6 +286,40 @@ export default function ProviderDashboard() {
             {/* BOOKINGS TAB */}
             {tab === "bookings" ? (
                 <div className="flex flex-col gap-4">
+                    {/* Customer Search Bar */}
+                    <div className="relative">
+                        <Search
+                            size={16}
+                            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                        />
+                        <input
+                            id="customer-search"
+                            type="text"
+                            value={customerSearch}
+                            onChange={(e) => setCustomerSearch(e.target.value)}
+                            placeholder="Search by customer name, email or phone…"
+                            className="w-full pl-9 pr-10 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+                        />
+                        {customerSearch && (
+                            <button
+                                onClick={() => setCustomerSearch("")}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                aria-label="Clear search"
+                            >
+                                <X size={15} />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Search result summary */}
+                    {customerSearch.trim() && (
+                        <p className="text-xs text-slate-500 dark:text-slate-400 -mt-1">
+                            {filteredBookings.length === 0
+                                ? `No bookings found for "${customerSearch}"`
+                                : `Showing ${filteredBookings.length} booking${filteredBookings.length !== 1 ? "s" : ""} for "${customerSearch}"`}
+                        </p>
+                    )}
+
                     {bookings.length === 0 ? (
                         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-500 flex flex-col items-center gap-3">
                             <Clock size={36} className="opacity-40" />
@@ -259,8 +328,14 @@ export default function ProviderDashboard() {
                                 When customers book your services, new orders will appear here automatically in real time!
                             </p>
                         </div>
+                    ) : filteredBookings.length === 0 && customerSearch.trim() ? (
+                        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-500 flex flex-col items-center gap-3">
+                            <Search size={36} className="opacity-30" />
+                            <p className="font-semibold text-base">No matching bookings found.</p>
+                            <p className="text-xs text-slate-400">Try a different name, email, or phone number.</p>
+                        </div>
                     ) : (
-                        bookings.map((booking) => (
+                        filteredBookings.map((booking) => (
                             <div
                                 key={booking._id || booking.orderId}
                                 className={`bg-white dark:bg-slate-800 rounded-2xl border p-5 transition-all ${
@@ -320,26 +395,36 @@ export default function ProviderDashboard() {
                                 <div className="flex flex-col gap-1 text-sm mb-4">
                                     {(booking.items || []).map((item, i) => (
                                         <div key={i} className="flex justify-between text-slate-700 dark:text-slate-300">
-                                            <span>{item.title} × {item.quantity}</span>
+                                            <span>{t(lang, item.title)} × {item.quantity}</span>
                                             <span className="font-medium">₹{item.total || item.price * item.quantity}</span>
                                         </div>
                                     ))}
-                                    <div className="border-t border-dashed border-slate-200 dark:border-slate-700 mt-2 pt-2 flex justify-between font-bold text-slate-900 dark:text-white text-base">
-                                        <span>Total Earnings</span>
-                                        <span className="text-emerald-600 dark:text-emerald-400">₹{booking.summary?.total || booking.amount / 100}</span>
+                                    <div className="border-t border-dashed border-slate-200 dark:border-slate-700 mt-2 pt-2 flex flex-col gap-0.5">
+                                        <div className="flex justify-between font-bold text-slate-900 dark:text-white text-base">
+                                            <span className="flex items-center gap-1.5 text-sm">
+                                                Approx. Total Amount
+                                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-300">
+                                                    Estimate
+                                                </span>
+                                            </span>
+                                            <span className="text-emerald-600 dark:text-emerald-400">~₹{booking.summary?.total || booking.amount / 100}</span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 text-right">
+                                            * Approximate quote subject to on-site scope
+                                        </p>
                                     </div>
                                 </div>
 
                                 {/* Real-time Status Actions */}
                                 <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
-                                    <span className="text-xs text-slate-400 font-semibold mr-1">Update Booking Status:</span>
+                                    <span className="text-xs text-slate-400 font-semibold mr-1">{t(lang, "Update Booking Status")}:</span>
                                     {booking.status === "SERVICE_BOOKED" && (
                                         <button
                                             onClick={() => handleStatusChange(booking._id, "ACCEPTED")}
                                             disabled={updatingStatusId === booking._id}
                                             className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                                         >
-                                            <CheckCircle size={13} /> Accept Booking
+                                            <CheckCircle size={13} /> {t(lang, "Accept Booking")}
                                         </button>
                                     )}
                                     {(booking.status === "ACCEPTED" || booking.status === "PROVIDER_ASSIGNED" || booking.status === "IN_PROGRESS") && (
@@ -348,12 +433,30 @@ export default function ProviderDashboard() {
                                             disabled={updatingStatusId === booking._id}
                                             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                                         >
-                                            <CheckCircle size={13} /> Mark Service Completed
+                                            <CheckCircle size={13} /> {t(lang, "Mark Service Completed")}
+                                        </button>
+                                    )}
+                                    {booking.status !== "SERVICE_COMPLETED" && booking.status !== "CANCELLED" && (
+                                        <button
+                                            onClick={() => {
+                                                if (window.confirm(t(lang, "Are you sure you want to cancel this booking?"))) {
+                                                    handleStatusChange(booking._id, "CANCELLED");
+                                                }
+                                            }}
+                                            disabled={updatingStatusId === booking._id}
+                                            className="px-3 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <XCircle size={13} /> {t(lang, "Decline / Cancel Booking")}
                                         </button>
                                     )}
                                     {booking.status === "SERVICE_COMPLETED" && (
                                         <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                                            <CheckCircle size={14} /> Completed & Paid
+                                            <CheckCircle size={14} /> {t(lang, "Completed & Paid")}
+                                        </span>
+                                    )}
+                                    {booking.status === "CANCELLED" && (
+                                        <span className="text-xs text-red-600 dark:text-red-400 font-semibold flex items-center gap-1">
+                                            <XCircle size={14} /> {t(lang, "Booking Cancelled")}
                                         </span>
                                     )}
                                 </div>
@@ -428,7 +531,17 @@ export default function ProviderDashboard() {
                             onChange={handleChange}
                             className={inputClass}
                         />
+                        <input
+                            type="text"
+                            name="pincode"
+                            placeholder="Pincode (e.g. 400053)"
+                            maxLength="6"
+                            value={form.pincode}
+                            onChange={handleChange}
+                            className={inputClass}
+                        />
                     </div>
+
                     <input
                         type="text"
                         name="skills"
@@ -470,9 +583,9 @@ export default function ProviderDashboard() {
                     <button
                         type="submit"
                         disabled={saving}
-                        className="self-start bg-brand-gradient text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue disabled:opacity-50"
+                        className="self-start bg-brand-gradient text-white px-6 py-2.5 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue disabled:opacity-50 cursor-pointer"
                     >
-                        {saving ? "Saving..." : "Save Profile"}
+                        {saving ? "Saving..." : t(lang, "Save Profile")}
                     </button>
                 </form>
             )}

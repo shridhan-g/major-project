@@ -2,12 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { register } from "../utils/api";
 import { UserPlus } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
-export default function Register({
-    onRegisterSuccess,
-    onClose,
-    onSwitchToLogin,
-}) {
+export default function Register({ onRegisterSuccess, onClose, onSwitchToLogin }) {
     const [userData, setUserData] = useState({
         first_name: "",
         last_name: "",
@@ -15,8 +13,8 @@ export default function Register({
         email: "",
         password: "",
     });
-
     const [error, setError] = useState("");
+    const { lang } = useLang();
 
     const handleChange = (e) => {
         setUserData({ ...userData, [e.target.name]: e.target.value });
@@ -45,23 +43,16 @@ export default function Register({
 
     return (
         <>
-            <form
-                onSubmit={handleSubmit}
-                className="w-80 sm:w-96 flex flex-col gap-6 px-8 sm:px-10 pb-8"
-            >
+            <form onSubmit={handleSubmit} className="w-80 sm:w-96 flex flex-col gap-6 px-8 sm:px-10 pb-8">
                 <div className="text-center">
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">
-                        Create Account
-                    </h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Join Genie in a few seconds
-                    </p>
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t(lang, "register_heading")}</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{t(lang, "register_subtitle")}</p>
                 </div>
                 <div className="flex flex-col gap-3">
                     <div className="w-full flex gap-2">
                         <input
                             type="text"
-                            placeholder="First Name"
+                            placeholder={t(lang, "register_first_name")}
                             name="first_name"
                             value={userData.first_name}
                             onChange={handleChange}
@@ -69,7 +60,7 @@ export default function Register({
                         />
                         <input
                             type="text"
-                            placeholder="Last Name"
+                            placeholder={t(lang, "register_last_name")}
                             name="last_name"
                             value={userData.last_name}
                             onChange={handleChange}
@@ -78,7 +69,7 @@ export default function Register({
                     </div>
                     <input
                         type="tel"
-                        placeholder="Enter Mobile No"
+                        placeholder={t(lang, "register_phone")}
                         pattern="[0-9]{10}"
                         maxLength="10"
                         autoComplete="off"
@@ -101,7 +92,7 @@ export default function Register({
                     />
                     <input
                         type="email"
-                        placeholder="Enter Email"
+                        placeholder={t(lang, "register_email")}
                         autoComplete="off"
                         name="email"
                         value={userData.email}
@@ -110,7 +101,7 @@ export default function Register({
                     />
                     <input
                         type="password"
-                        placeholder="Password"
+                        placeholder={t(lang, "register_password")}
                         autoComplete="off"
                         name="password"
                         value={userData.password}
@@ -118,22 +109,20 @@ export default function Register({
                         className={inputClass}
                     />
                 </div>
-                {error && (
-                    <p className="text-red-500 text-sm text-center">{error}</p>
-                )}
+                {error && <p className="text-red-500 text-sm text-center">{error}</p>}
                 <button
                     type="submit"
                     className="flex items-center justify-center gap-2 bg-brand-gradient text-white p-2.5 rounded-full shadow-glow-blue hover:opacity-90 transition-all text-sm font-semibold"
                 >
-                    <UserPlus size={16} /> Register
+                    <UserPlus size={16} /> {t(lang, "register_btn")}
                 </button>
                 <h1 className="text-sm text-center -mt-2 text-slate-500 dark:text-slate-400">
-                    Already have an account?{" "}
+                    {t(lang, "register_have_account")}{" "}
                     <span
                         onClick={handleSwitchToLogin}
                         className="font-semibold text-blue-600 dark:text-blue-400 underline underline-offset-2 cursor-pointer"
                     >
-                        Login
+                        {t(lang, "register_login")}
                     </span>
                 </h1>
                 <Link
@@ -141,8 +130,8 @@ export default function Register({
                     onClick={onClose}
                     className="text-center text-sm bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-full py-2 text-slate-700 dark:text-slate-200 hover:border-blue-500 hover:text-blue-600 transition-colors"
                 >
-                    Are you a service provider?{" "}
-                    <span className="font-semibold">Join us here</span>
+                    {t(lang, "register_provider")}{" "}
+                    <span className="font-semibold">{t(lang, "register_join")}</span>
                 </Link>
             </form>
         </>

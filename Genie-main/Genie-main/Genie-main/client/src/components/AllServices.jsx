@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getServices, getServiceDetails } from "../utils/api";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ClipLoader from "react-spinners/ClipLoader";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
 export default function AllServices() {
     const [servicesData, setServicesData] = useState([]);
@@ -12,6 +14,7 @@ export default function AllServices() {
     const [scrollStates, setScrollStates] = useState({});
     const navigate = useNavigate();
     const scrollContainerRefs = useRef({});
+    const { lang } = useLang();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -132,7 +135,7 @@ export default function AllServices() {
                                 className="mb-8"
                             >
                                 <h3 className="text-xl font-bold mb-4">
-                                    {subcatName} - {typeKey}
+                                    {t(lang, subcatName)} - {t(lang, typeKey)}
                                 </h3>
                                 <div className="relative">
                                     {scrollStates[
@@ -201,7 +204,7 @@ export default function AllServices() {
                                                     }}
                                                 >
                                                     <h4 className="h-12 flex items-center justify-center">
-                                                        {category.name}
+                                                        {t(lang, category.name)}
                                                     </h4>
                                                     <img
                                                         src={`${
@@ -226,7 +229,7 @@ export default function AllServices() {
                     return (
                         <div key={subcatName} className="mb-8">
                             <h3 className="text-xl font-bold mb-4">
-                                {subcatName}
+                                {t(lang, subcatName)}
                             </h3>
                             <div className="relative">
                                 {scrollStates[`${serviceName}-${subcatName}`]
@@ -289,7 +292,7 @@ export default function AllServices() {
                                                 }}
                                             >
                                                 <h4 className="h-12 flex items-center justify-center bg-gray-50">
-                                                    {category.name}
+                                                    {t(lang, category.name)}
                                                 </h4>
                                                 <img
                                                     src={`${
@@ -331,7 +334,7 @@ export default function AllServices() {
                             className="border-t border-black pt-8"
                         >
                             <h2 className="text-3xl font-bold mb-6 font-[NeuwMachinaBold]">
-                                {service.serviceName}
+                                {t(lang, service.serviceName)}
                             </h2>
                             {serviceDetails[service.serviceName] &&
                                 renderCategories(

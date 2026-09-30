@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev:server": "node server/server.js",
+    "dev:server": "npx nodemon --watch server server/server.js",
     "dev:client": "cd client && npx vite",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "seed": "cd server && npm run seed"

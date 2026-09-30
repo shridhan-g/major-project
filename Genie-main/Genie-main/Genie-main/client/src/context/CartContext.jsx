@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { updateUserCart, clearUserCart, getUserDetails } from "../utils/api";
 
 export const CART_STORAGE_KEY = "userCart";
@@ -17,6 +17,9 @@ export const CartProvider = ({ children, isAuthenticated }) => {
     const [cartServices, setCartServices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // Tracks whether the initial cart load has completed so the sync effect
+    // doesn't fire with a stale empty array before server data arrives.
+    const initializedRef = useRef(false);
 
     // Initialize and handle auth state changes
     useEffect(() => {
@@ -71,30 +74,33 @@ export const CartProvider = ({ children, isAuthenticated }) => {
                 setError(err.message);
             } finally {
                 setLoading(false);
+                initializedRef.current = true;
             }
         };
 
+        // Reset the flag when auth changes so we re-initialise cleanly
+        initializedRef.current = false;
         initializeCart();
     }, [isAuthenticated]);
 
-    // Modified save effect to prevent empty cart updates
+    // Sync cart to server / localStorage whenever it changes,
+    // but only AFTER the initial load has completed.
     useEffect(() => {
-        if (!loading && cartServices) {
-            if (isAuthenticated) {
-                if (cartServices.length > 0) {
-                    updateUserCart(cartServices).catch((err) => {
-                        console.error("Error updating server cart:", err);
-                        setError(err.message);
-                    });
-                }
-            } else {
-                localStorage.setItem(
-                    CART_STORAGE_KEY,
-                    JSON.stringify(cartServices)
-                );
+        if (!initializedRef.current) return;
+        if (isAuthenticated) {
+            if (cartServices.length > 0) {
+                updateUserCart(cartServices).catch((err) => {
+                    console.error("Error updating server cart:", err);
+                    setError(err.message);
+                });
             }
+        } else {
+            localStorage.setItem(
+                CART_STORAGE_KEY,
+                JSON.stringify(cartServices)
+            );
         }
-    }, [cartServices, isAuthenticated, loading]);
+    }, [cartServices, isAuthenticated]);
 
     const mergeCartsOnLogin = async (localCart, serverCart) => {
         const mergedCart = [...serverCart];
@@ -172,7 +178,6 @@ export const CartProvider = ({ children, isAuthenticated }) => {
         try {
             if (isAuthenticated) {
                 await clearUserCart();
-                setCartServices([]);
             }
             setCartServices([]);
             if (!isAuthenticated) {

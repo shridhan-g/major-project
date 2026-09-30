@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback, useContext } from "react";
+import { useEffect, useState, useCallback, useContext, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 
 import { bookings, logo } from "../assets";
 import { HiUser } from "react-icons/hi2";
-import { Sun, Moon, ShoppingCart, MapPin, BadgeCheck, Wrench } from "lucide-react";
+import { Sun, Moon, ShoppingCart, MapPin, BadgeCheck, Wrench, Globe } from "lucide-react";
 
 import Login from "../components/Login";
 import Register from "../components/Register";
@@ -14,20 +14,14 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import PortalContext from "../context/PortalContext";
 import Location from "../components/Location";
-
-const NAV_LINKS = [
-    { label: "Home", to: "/" },
-    { label: "Services", to: "/#services" },
-    { label: "Providers", to: "/providers" },
-    { label: "Bookings", to: "/bookings" },
-    { label: "Become a Provider", to: "/provider/register" },
-    { label: "Provider Dashboard", to: "/provider/dashboard" },
-];
+import { useLang, LANGUAGES } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
 export default function Navbar() {
     const navigate = useNavigate();
     const location = useLocation();
     const { dark, toggle } = useTheme();
+    const { lang, changeLang } = useLang();
 
     const {
         showAddress,
@@ -45,6 +39,17 @@ export default function Navbar() {
     const { getCartCount } = useContext(CartContext);
 
     const [top, setTop] = useState(true);
+    const [langOpen, setLangOpen] = useState(false);
+    const langRef = useRef(null);
+
+    const NAV_LINKS = [
+        { labelKey: "nav_home", to: "/" },
+        // { labelKey: "nav_services", to: "/services" },
+        // { labelKey: "nav_providers", to: "/providers" },
+        { labelKey: "nav_bookings", to: "/bookings" },
+        { labelKey: "nav_become_provider", to: "/provider/register" },
+        { labelKey: "nav_provider_dashboard", to: "/provider/dashboard" },
+    ];
 
     useEffect(() => {
         const scrollHandler = () => {
@@ -52,6 +57,17 @@ export default function Navbar() {
         };
         window.addEventListener("scroll", scrollHandler);
         return () => window.removeEventListener("scroll", scrollHandler);
+    }, []);
+
+    // Close lang dropdown when clicking outside
+    useEffect(() => {
+        const handler = (e) => {
+            if (langRef.current && !langRef.current.contains(e.target)) {
+                setLangOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, []);
 
     const [cartCount, setCartCount] = useState(0);
@@ -87,27 +103,15 @@ export default function Navbar() {
 
     const isActive = (to) => {
         if (to === "/") return location.pathname === "/";
-        if (to === "/#services") return location.pathname === "/";
+        if (to === "/services") return location.pathname.startsWith("/services") || location.pathname.startsWith("/available-services");
         return location.pathname.startsWith(to);
     };
 
     const goHomeAndScrollToServices = (e, to) => {
-        if (to === "/#services") {
-            e.preventDefault();
-            if (location.pathname !== "/") {
-                navigate("/");
-                setTimeout(() => {
-                    document
-                        .getElementById("services")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                }, 150);
-            } else {
-                document
-                    .getElementById("services")
-                    ?.scrollIntoView({ behavior: "smooth" });
-            }
-        }
+        // Direct link handled by react-router
     };
+
+    const currentLang = LANGUAGES.find((l) => l.code === lang) || LANGUAGES[0];
 
     return (
         <>
@@ -148,7 +152,7 @@ export default function Navbar() {
                     <div className="hidden lg:flex items-center gap-1">
                         {NAV_LINKS.map((link) => (
                             <Link
-                                key={link.label}
+                                key={link.labelKey}
                                 to={link.to}
                                 onClick={(e) => goHomeAndScrollToServices(e, link.to)}
                                 className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors duration-300 ${
@@ -157,13 +161,65 @@ export default function Navbar() {
                                         : "text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60"
                                 }`}
                             >
-                                {link.label}
+                                {t(lang, link.labelKey)}
                             </Link>
                         ))}
                     </div>
 
                     {/* Right actions */}
                     <div className="flex items-center gap-2 sm:gap-3">
+
+                        {/* Language Switcher */}
+                        <div className="relative" ref={langRef}>
+                            <button
+                                id="lang-switcher-btn"
+                                onClick={() => setLangOpen((o) => !o)}
+                                aria-label="Switch language"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-slate-300 dark:border-slate-600 hover:border-blue-500 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors text-sm font-medium"
+                            >
+                                <Globe size={16} />
+                                <span className="hidden sm:inline">{currentLang.native}</span>
+                                <span className="sm:hidden">{currentLang.flag}</span>
+                                <svg
+                                    className={`w-3 h-3 transition-transform duration-200 ${langOpen ? "rotate-180" : ""}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {langOpen && (
+                                <div className="absolute right-0 mt-2 w-44 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                                    {LANGUAGES.map((l) => (
+                                        <button
+                                            key={l.code}
+                                            id={`lang-${l.code}`}
+                                            onClick={() => {
+                                                changeLang(l.code);
+                                                setLangOpen(false);
+                                            }}
+                                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                                                lang === l.code
+                                                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold"
+                                                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                                            }`}
+                                        >
+                                            <span className="text-lg">{l.flag}</span>
+                                            <div className="flex flex-col items-start">
+                                                <span className="font-medium leading-tight">{l.native}</span>
+                                                <span className="text-xs text-slate-400">{l.label}</span>
+                                            </div>
+                                            {lang === l.code && (
+                                                <svg className="ml-auto w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         <button
                             onClick={toggle}
                             aria-label="Toggle dark mode"
@@ -182,7 +238,7 @@ export default function Navbar() {
                                     {cartCount}
                                 </span>
                             )}
-                            <span className="hidden sm:inline text-sm">Cart</span>
+                            <span className="hidden sm:inline text-sm">{t(lang, "nav_cart")}</span>
                         </Link>
 
                         {isAuthenticated && user ? (
@@ -192,7 +248,7 @@ export default function Navbar() {
                                     className="hidden sm:flex items-center gap-1.5 p-2 rounded-full border border-slate-300 dark:border-slate-600 hover:border-blue-500 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors"
                                 >
                                     <img src={bookings} alt="" className="h-5" />
-                                    <span className="text-sm">Bookings</span>
+                                    <span className="text-sm">{t(lang, "nav_bookings")}</span>
                                 </Link>
                                 <div className="w-px h-6 bg-slate-300 dark:bg-slate-600 hidden sm:block"></div>
                                 <div className="hidden sm:flex items-center gap-2">
@@ -203,7 +259,7 @@ export default function Navbar() {
                                         onClick={handleLogout}
                                         className="px-4 py-1.5 rounded-full border-2 border-slate-900 dark:border-white hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors text-sm"
                                     >
-                                        Logout
+                                        {t(lang, "nav_logout")}
                                     </button>
                                 </div>
                             </>
@@ -213,7 +269,7 @@ export default function Navbar() {
                                     onClick={openLogin}
                                     className="text-sm font-medium px-3 py-1.5 rounded-full hover:bg-slate-200/60 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
                                 >
-                                    Login
+                                    {t(lang, "nav_login")}
                                 </div>
                                 <div
                                     onClick={openRegister}
@@ -221,7 +277,7 @@ export default function Navbar() {
                                 >
                                     <div className="w-full h-full relative flex items-center justify-center gap-2 z-10">
                                         <HiUser size="16px" />
-                                        <span>Register</span>
+                                        <span>{t(lang, "nav_register")}</span>
                                     </div>
                                 </div>
                             </>

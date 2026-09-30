@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }) => {
 
     const login = (userData) => {
         setIsAuthenticated(true);
+        if (userData?.token) {
+            localStorage.setItem("genie_token", userData.token);
+        }
         setUser(userData.user || userData);
     };
 
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }) => {
         try {
             // Preserve cart in local storage before logout
             const cartData = localStorage.getItem(CART_STORAGE_KEY);
+            localStorage.removeItem("genie_token");
 
             // Call logout API
             await logoutAPI();
@@ -84,7 +88,7 @@ export const AuthProvider = ({ children }) => {
                 isAdmin, // Add isAdmin to the context
             }}
         >
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
 };

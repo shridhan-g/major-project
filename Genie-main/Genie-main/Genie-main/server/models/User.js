@@ -1,6 +1,26 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const addressSchema = new mongoose.Schema(
+    {
+        label: { type: String, default: "Home", trim: true }, // "Home", "Work", "Other"
+        name: { type: String, required: true, trim: true },
+        mobile: { type: String, required: true, trim: true },
+        house: { type: String, default: "", trim: true },   // House/flat/building no.
+        area: { type: String, default: "", trim: true },    // Area/colony/street/locality
+        landmark: { type: String, default: "", trim: true },
+        pincode: { type: String, required: true, trim: true },
+        city: { type: String, default: "", trim: true },
+        district: { type: String, default: "", trim: true },
+        state: { type: String, default: "", trim: true },
+        postOffice: { type: String, default: "", trim: true },
+        latitude: { type: Number, default: null },
+        longitude: { type: Number, default: null },
+        isDefault: { type: Boolean, default: false },
+    },
+    { _id: true }
+);
+
 const cartItemSchema = new mongoose.Schema({
     service: {
         type: mongoose.Schema.Types.ObjectId,
@@ -37,6 +57,7 @@ const UserSchema = new mongoose.Schema({
     password: { type: String, required: true, minlength: 6 },
     role: { type: String, default: "user" },
     cart: { type: [cartItemSchema], default: [] },
+    addresses: { type: [addressSchema], default: [] },
     createdAt: { type: Date, default: Date.now },
 });
 

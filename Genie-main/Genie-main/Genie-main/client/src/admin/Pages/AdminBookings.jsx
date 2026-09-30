@@ -192,17 +192,25 @@ export default function AdminBookings() {
 
                             <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
-                                    <span>Subtotal:</span>
-                                    <span>₹{booking.summary?.subtotal ?? 0}</span>
+                                    <span>Approx. Subtotal:</span>
+                                    <span>~₹{booking.summary?.subtotal ?? 0}</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
-                                    <span>Tax:</span>
-                                    <span>₹{booking.summary?.tax ?? 0}</span>
+                                    <span>Estimated Tax:</span>
+                                    <span>~₹{booking.summary?.tax ?? 0}</span>
                                 </div>
-                                <div className="flex justify-between font-medium mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                                    <span>Total:</span>
-                                    <span>₹{booking.summary?.total ?? 0}</span>
+                                <div className="flex justify-between items-center font-medium mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                                    <span className="flex items-center gap-1.5 text-sm">
+                                        Approx. Total:
+                                        <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                            Estimate
+                                        </span>
+                                    </span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">~₹{booking.summary?.total ?? 0}</span>
                                 </div>
+                                <p className="text-[10px] text-slate-400 pt-1 text-right">
+                                    * Approximate customer estimate
+                                </p>
                             </div>
                         </div>
                     </div>

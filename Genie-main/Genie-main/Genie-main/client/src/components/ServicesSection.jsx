@@ -6,11 +6,16 @@ import { SkeletonTheme } from "react-loading-skeleton";
 import PortalLayout from "./PortalLayout";
 import ServiceDetails from "./ServiceDetails";
 import { Sparkles } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
+
+import { Link } from "react-router-dom";
 
 export default function ServicesSection() {
     const [servicesData, setServicesData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedService, setSelectedService] = useState(null);
+    const { lang } = useLang();
 
     const handleServiceClick = (serviceName) => {
         setSelectedService(serviceName);
@@ -38,37 +43,41 @@ export default function ServicesSection() {
         <>
             <section id="services" className="scroll-mt-24 py-14">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-widest mb-2">
-                        <Sparkles size={14} /> What we offer
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-widest mb-2">
+                                <Sparkles size={14} /> {t(lang, "services_what_we_offer")}
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] text-slate-900 dark:text-white">
+                                {t(lang, "services_heading")} <span className="text-gradient">{t(lang, "services_heading_2")}</span>
+                            </h1>
+                            <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-xl">
+                                {t(lang, "services_subtitle")}
+                            </p>
+                        </div>
+                        {/* <Link
+                            to="/services"
+                            className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors self-start sm:self-auto py-2"
+                        >
+                            View All Available Services →
+                        </Link> */}
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] text-slate-900 dark:text-white">
-                        Our <span className="text-gradient">Services</span>
-                    </h1>
-                    <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-xl">
-                        Choose from a wide range of home services delivered by
-                        verified professionals.
-                    </p>
 
-                    <SkeletonTheme
-                        baseColor="#cbd5e1"
-                        highlightColor="#e2e8f0"
-                    >
+                    <SkeletonTheme baseColor="#cbd5e1" highlightColor="#e2e8f0">
                         <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 sm:gap-5 pt-8">
                             {isLoading
-                                ? Array(6)
-                                      .fill()
-                                      .map((_, index) => (
-                                          <SkeletonService key={index} />
-                                      ))
+                                ? Array(6).fill().map((_, index) => (
+                                    <SkeletonService key={index} />
+                                ))
                                 : servicesData.map((service, index) => (
-                                      <Services
-                                          key={service._id}
-                                          serviceImage={service.serviceImage}
-                                          serviceName={service.serviceName}
-                                          onServiceClick={handleServiceClick}
-                                          delay={index * 60}
-                                      />
-                                  ))}
+                                    <Services
+                                        key={service._id}
+                                        serviceImage={service.serviceImage}
+                                        serviceName={service.serviceName}
+                                        onServiceClick={handleServiceClick}
+                                        delay={index * 60}
+                                    />
+                                ))}
                         </div>
                     </SkeletonTheme>
                 </div>

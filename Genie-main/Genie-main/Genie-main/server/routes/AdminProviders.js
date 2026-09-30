@@ -4,10 +4,28 @@ import Review from "../models/Review.js";
 
 const router = express.Router();
 
-// Get all providers (including unverified) for admin review
+// Get all providers (supports ?status=pending|approved|rejected|all)
 router.get("/", async (req, res) => {
     try {
-        const providers = await ServiceProvider.find()
+        const { status } = req.query;
+        const query = {};
+        if (status && status !== "all") {
+            if (status === "approved") {
+                query.$or = [
+                    { status: "approved" },
+                    { isVerified: true, status: { $nin: ["pending", "rejected", "mobile_unverified"] } },
+                ];
+            } else if (status === "pending") {
+                query.$or = [
+                    { status: "pending" },
+                    { status: { $exists: false }, isVerified: false },
+                ];
+            } else {
+                query.status = status;
+            }
+        }
+
+        const providers = await ServiceProvider.find(query)
             .populate("user", "first_name last_name email phone")
             .sort({ createdAt: -1 });
         res.json(providers);
@@ -17,7 +35,70 @@ router.get("/", async (req, res) => {
     }
 });
 
-// Verify / unverify a provider
+// Approve provider application
+router.put("/:id/approve", async (req, res) => {
+    try {
+        const provider = await ServiceProvider.findByIdAndUpdate(
+            req.params.id,
+            {
+                status: "approved",
+                verificationStatus: "APPROVED",
+                isVerified: true,
+                approvedAt: new Date(),
+                verifiedAt: new Date(),
+                rejectionReason: "",
+                adminRemark: "",
+            },
+            { new: true }
+        ).populate("user", "first_name last_name email phone");
+
+        if (!provider) {
+            return res.status(404).json({ message: "Provider not found" });
+        }
+
+        res.json({
+            success: true,
+            message: "Provider application approved successfully.",
+            provider,
+        });
+    } catch (error) {
+        console.error("Error approving provider:", error);
+        res.status(500).json({ message: "Error approving provider" });
+    }
+});
+
+// Reject provider application with reason
+router.put("/:id/reject", async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const provider = await ServiceProvider.findByIdAndUpdate(
+            req.params.id,
+            {
+                status: "rejected",
+                verificationStatus: "REJECTED",
+                isVerified: false,
+                rejectionReason: (reason || "").trim() || "Application declined by administrator.",
+                adminRemark: (reason || "").trim() || "Application declined by administrator.",
+            },
+            { new: true }
+        ).populate("user", "first_name last_name email phone");
+
+        if (!provider) {
+            return res.status(404).json({ message: "Provider not found" });
+        }
+
+        res.json({
+            success: true,
+            message: "Provider application rejected.",
+            provider,
+        });
+    } catch (error) {
+        console.error("Error rejecting provider:", error);
+        res.status(500).json({ message: "Error rejecting provider" });
+    }
+});
+
+// Verify / unverify a provider (backward compatibility)
 router.put("/:id/verify", async (req, res) => {
     try {
         const { isVerified } = req.body;
@@ -25,11 +106,15 @@ router.put("/:id/verify", async (req, res) => {
             return res.status(400).json({ message: "isVerified must be a boolean" });
         }
 
+        const updateData = isVerified
+            ? { status: "approved", verificationStatus: "APPROVED", isVerified: true, approvedAt: new Date(), verifiedAt: new Date(), rejectionReason: "", adminRemark: "" }
+            : { status: "rejected", verificationStatus: "SUSPENDED", isVerified: false };
+
         const provider = await ServiceProvider.findByIdAndUpdate(
             req.params.id,
-            { isVerified, verifiedAt: isVerified ? new Date() : null },
+            updateData,
             { new: true }
-        );
+        ).populate("user", "first_name last_name email phone");
 
         if (!provider) {
             return res.status(404).json({ message: "Provider not found" });

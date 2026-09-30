@@ -37,8 +37,8 @@ const resolveUserId = async (req, orderDetails = {}) => {
         if (found) return found._id;
     }
 
-    const firstUser = await User.findOne();
-    return firstUser?._id || null;
+    // Do NOT fall back to an arbitrary user — return null and let callers handle it
+    return null;
 };
 
 // Initialize Razorpay
@@ -106,7 +106,7 @@ router.post("/verify-payment", async (req, res) => {
 
         const sign = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSign = crypto
-            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "secret")
+            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "rzp_test_mock_secret")
             .update(sign)
             .digest("hex");
 
@@ -134,49 +134,14 @@ router.post("/verify-payment", async (req, res) => {
         let assignedProviderId = orderDetails.providerId || null;
 
         if (!assignedProviderId && orderDetails.items && orderDetails.items.length > 0) {
-            const firstItem = orderDetails.items[0];
-            const catStr = firstItem.category || "";
-            const titleStr = firstItem.title || "";
-            
-            // Try matching category exact or partial
-            if (catStr) {
-                const catMatch = await ServiceProvider.findOne({
-                    isVerified: true,
-                    $or: [
-                        { category: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
-                        { skills: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
-                    ],
-                }).sort({ averageRating: -1 });
-                if (catMatch) assignedProviderId = catMatch._id;
-            }
-
-            // If no match yet, try matching by key words from title (e.g. Plumber, AC, Salon, Cleaning)
-            if (!assignedProviderId && titleStr) {
-                const keywords = titleStr.split(/\s+/).filter((w) => w.length > 2);
-                for (const word of keywords) {
-                    const wordMatch = await ServiceProvider.findOne({
-                        isVerified: true,
-                        $or: [
-                            { category: new RegExp(word, "i") },
-                            { skills: new RegExp(word, "i") },
-                            { name: new RegExp(word, "i") },
-                        ],
-                    }).sort({ averageRating: -1 });
-                    if (wordMatch) {
-                        assignedProviderId = wordMatch._id;
-                        break;
-                    }
-                }
-            }
-
-            // Ultimate fallback: highest rated active provider
-            if (!assignedProviderId) {
-                const fallbackProvider = await ServiceProvider.findOne({ isVerified: true }).sort({ averageRating: -1 });
-                if (fallbackProvider) {
-                    assignedProviderId = fallbackProvider._id;
-                }
-            }
+            const customerPincode =
+                orderDetails.bookingDetails?.pincode ||
+                orderDetails.customerDetails?.pincode ||
+                (orderDetails.bookingDetails?.serviceAddress?.match(/\b\d{6}\b/)?.[0]) ||
+                "";
+            assignedProviderId = await findBestProvider(orderDetails.items, customerPincode);
         }
+
 
         const resolvedUserId = await resolveUserId(req, orderDetails);
 
@@ -212,53 +177,82 @@ router.post("/verify-payment", async (req, res) => {
     }
 });
 
+async function findBestProvider(items, pincode = "") {
+    if (!items || items.length === 0) return null;
+    const firstItem = items[0];
+    const catStr = firstItem.category || "";
+    const titleStr = firstItem.title || "";
+    const cleanPincode = String(pincode || "").trim();
+
+    let candidateProviders = [];
+
+    if (catStr) {
+        candidateProviders = await ServiceProvider.find({
+            isVerified: true,
+            $or: [
+                { category: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
+                { skills: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
+            ],
+        });
+    }
+
+    if (candidateProviders.length === 0 && titleStr) {
+        const keywords = titleStr.split(/\s+/).filter((w) => w.length > 2);
+        for (const word of keywords) {
+            candidateProviders = await ServiceProvider.find({
+                isVerified: true,
+                $or: [
+                    { category: new RegExp(word, "i") },
+                    { skills: new RegExp(word, "i") },
+                    { name: new RegExp(word, "i") },
+                ],
+            });
+            if (candidateProviders.length > 0) break;
+        }
+    }
+
+    if (candidateProviders.length === 0) {
+        candidateProviders = await ServiceProvider.find({ isVerified: true });
+    }
+
+    if (candidateProviders.length === 0) return null;
+
+    if (cleanPincode) {
+        // Find exact pincode match
+        const exactMatch = candidateProviders.find(
+            (p) => (p.pincode === cleanPincode || p.location?.pincode === cleanPincode || p.contact?.pincode === cleanPincode)
+        );
+        if (exactMatch) return exactMatch._id;
+
+        // Find regional pincode prefix match
+        const prefixMatch = candidateProviders.find((p) => {
+            const pPin = p.pincode || p.location?.pincode || p.contact?.pincode || "";
+            return pPin && pPin.substring(0, 2) === cleanPincode.substring(0, 2);
+        });
+        if (prefixMatch) return prefixMatch._id;
+    }
+
+    // Default to highest rated
+    candidateProviders.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+    return candidateProviders[0]._id;
+}
+
 // Direct booking route (No payment gateway needed)
 router.post("/direct-booking", async (req, res) => {
     try {
         const orderDetails = req.body;
         let assignedProviderId = orderDetails.providerId || null;
 
+        const customerPincode =
+            orderDetails.bookingDetails?.pincode ||
+            orderDetails.customerDetails?.pincode ||
+            (orderDetails.bookingDetails?.serviceAddress?.match(/\b\d{6}\b/)?.[0]) ||
+            "";
+
         if (!assignedProviderId && orderDetails.items && orderDetails.items.length > 0) {
-            const firstItem = orderDetails.items[0];
-            const catStr = firstItem.category || "";
-            const titleStr = firstItem.title || "";
-
-            if (catStr) {
-                const catMatch = await ServiceProvider.findOne({
-                    isVerified: true,
-                    $or: [
-                        { category: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
-                        { skills: new RegExp(catStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i") },
-                    ],
-                }).sort({ averageRating: -1 });
-                if (catMatch) assignedProviderId = catMatch._id;
-            }
-
-            if (!assignedProviderId && titleStr) {
-                const keywords = titleStr.split(/\s+/).filter((w) => w.length > 2);
-                for (const word of keywords) {
-                    const wordMatch = await ServiceProvider.findOne({
-                        isVerified: true,
-                        $or: [
-                            { category: new RegExp(word, "i") },
-                            { skills: new RegExp(word, "i") },
-                            { name: new RegExp(word, "i") },
-                        ],
-                    }).sort({ averageRating: -1 });
-                    if (wordMatch) {
-                        assignedProviderId = wordMatch._id;
-                        break;
-                    }
-                }
-            }
-
-            if (!assignedProviderId) {
-                const fallbackProvider = await ServiceProvider.findOne({ isVerified: true }).sort({ averageRating: -1 });
-                if (fallbackProvider) {
-                    assignedProviderId = fallbackProvider._id;
-                }
-            }
+            assignedProviderId = await findBestProvider(orderDetails.items, customerPincode);
         }
+
 
         const resolvedUserId = await resolveUserId(req, orderDetails);
         const generatedOrderId = `ORD_${Date.now()}`;
@@ -296,6 +290,40 @@ router.post("/direct-booking", async (req, res) => {
     }
 });
 
+// Route to cancel a user booking
+router.put("/bookings/:id/cancel", async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const booking = await Payment.findById(req.params.id);
+        if (!booking) {
+            return res.status(404).json({ success: false, message: "Booking not found" });
+        }
+        if (booking.status === "SERVICE_COMPLETED") {
+            return res.status(400).json({ success: false, message: "Completed bookings cannot be cancelled" });
+        }
+        if (booking.status === "CANCELLED") {
+            return res.status(400).json({ success: false, message: "Booking is already cancelled" });
+        }
+        booking.status = "CANCELLED";
+        if (reason) {
+            booking.bookingDetails = booking.bookingDetails || {};
+            booking.bookingDetails.notes = booking.bookingDetails.notes
+                ? `${booking.bookingDetails.notes} [Cancelled: ${reason}]`
+                : `Cancelled by customer: ${reason}`;
+        }
+        await booking.save();
+        console.log(`❌ Booking #${booking.orderId} was cancelled by user.`);
+        res.json({ success: true, message: "Booking cancelled successfully", booking });
+    } catch (error) {
+        console.error("Error cancelling booking:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error cancelling booking",
+            error: error.message,
+        });
+    }
+});
+
 // Add new route to get user bookings
 router.get("/bookings/:user", async (req, res) => {
     try {
@@ -317,3 +345,4 @@ router.get("/bookings/:user", async (req, res) => {
 });
 
 export default router;
+

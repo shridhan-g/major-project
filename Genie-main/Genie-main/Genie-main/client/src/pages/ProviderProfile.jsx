@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { getProviderById, submitProviderReview } from "../utils/api";
 import { useAuth } from "../context/AuthContext";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 import { BadgeCheck, Star, MapPin, Phone, Mail, Clock, CalendarCheck } from "lucide-react";
 
 const StarRating = ({ rating, size = 16 }) => {
@@ -27,6 +29,7 @@ export default function ProviderProfile() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
+    const { lang } = useLang();
 
     const [provider, setProvider] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -113,12 +116,12 @@ export default function ProviderProfile() {
                             </h1>
                             {provider.isVerified && (
                                 <span className="badge-verified">
-                                    <BadgeCheck size={14} /> Verified
+                                    <BadgeCheck size={14} /> {t(lang, "providers_verified")}
                                 </span>
                             )}
                         </div>
                         <p className="text-blue-600 dark:text-blue-400 font-medium">
-                            {provider.category}
+                            {t(lang, provider.category)}
                         </p>
                         <StarRating rating={provider.averageRating} size={18} />
                         <span className="text-sm text-slate-500 dark:text-slate-400">
@@ -127,16 +130,16 @@ export default function ProviderProfile() {
                     </div>
                     <button
                         onClick={bookWithProvider}
-                        className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue"
+                        className="flex items-center gap-2 bg-brand-gradient text-white px-6 py-3 rounded-full hover:opacity-90 transition-all uppercase tracking-wider text-sm font-semibold shadow-glow-blue cursor-pointer"
                     >
-                        <CalendarCheck size={16} /> Book with this Provider
+                        <CalendarCheck size={16} /> {t(lang, "Book with this Provider")}
                     </button>
                 </div>
 
                 <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6 pt-6 border-t border-dashed border-slate-200 dark:border-slate-700 text-sm">
                     <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                         <Clock size={16} className="text-blue-600 dark:text-blue-400" />{" "}
-                        {provider.experienceYears} years experience
+                        {provider.experienceYears} {t(lang, "providers_yrs_exp")}
                     </div>
                     {provider.hourlyRate > 0 && (
                         <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -163,7 +166,7 @@ export default function ProviderProfile() {
 
                 <div className="relative mt-6">
                     <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300 pb-2">
-                        Skills
+                        {t(lang, "Skills")}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                         {(provider.skills || []).length > 0 ? (
@@ -172,7 +175,7 @@ export default function ProviderProfile() {
                                     key={skill}
                                     className="text-sm bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full px-3 py-1 text-slate-700 dark:text-slate-200"
                                 >
-                                    {skill}
+                                    {t(lang, skill)}
                                 </span>
                             ))
                         ) : (
@@ -184,7 +187,7 @@ export default function ProviderProfile() {
                 {provider.bio && (
                     <div className="relative mt-6">
                         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-300 pb-2">
-                            About
+                            {t(lang, "About")}
                         </h2>
                         <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                             {provider.bio}
@@ -195,7 +198,7 @@ export default function ProviderProfile() {
 
             <div className="mb-8">
                 <h2 className="text-xl font-[NeuwMachinaBold] text-slate-900 dark:text-white pb-4">
-                    Ratings & Reviews
+                    {t(lang, "Ratings & Reviews")}
                 </h2>
 
                 {isAuthenticated ? (
@@ -229,7 +232,7 @@ export default function ProviderProfile() {
                         </div>
                         <textarea
                             rows="3"
-                            placeholder="Share your experience with this provider..."
+                            placeholder={t(lang, "Share your experience with this provider...")}
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
                             className="text-sm rounded-lg p-2.5 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
@@ -241,19 +244,19 @@ export default function ProviderProfile() {
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="self-start bg-brand-gradient text-white px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50"
+                            className="self-start bg-brand-gradient text-white px-5 py-2 rounded-full text-sm font-semibold hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                         >
-                            {submitting ? "Submitting..." : "Submit Review"}
+                            {submitting ? t(lang, "Submitting...") : t(lang, "Submit Review")}
                         </button>
                     </form>
                 ) : (
                     <p className="text-sm text-slate-500 dark:text-slate-400 pb-4">
-                        Please login to leave a review.
+                        {t(lang, "Please login to leave a review.")}
                     </p>
                 )}
 
                 {reviews.length === 0 ? (
-                    <p className="text-slate-500">No reviews yet. Be the first!</p>
+                    <p className="text-slate-500">{t(lang, "No reviews yet. Be the first!")}</p>
                 ) : (
                     <div className="flex flex-col gap-4">
                         {reviews.map((review) => (

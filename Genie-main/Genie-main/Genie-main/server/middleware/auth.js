@@ -4,8 +4,11 @@ import User from "../models/User.js";
 
 export const authenticateUser = async (req, res, next) => {
     try {
-        // Get token from cookie
-        const token = req.cookies.token;
+        // Get token from cookie or header
+        const token =
+            req.cookies.token ||
+            req.header("x-auth-token") ||
+            req.header("Authorization")?.replace("Bearer ", "");
 
         if (!token) {
             return res.status(401).json({

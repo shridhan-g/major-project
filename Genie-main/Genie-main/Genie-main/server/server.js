@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 // Set __dirname and __filename
@@ -28,6 +29,7 @@ import AdminServices from "./routes/AdminServices.js";
 import adminProvidersRoutes from "./routes/AdminProviders.js";
 import adminDashboardRoutes from "./routes/AdminDashboard.js";
 import adminServicesRouter from "./routes/AdminServicesRouter.js";
+import { generateAllDummyProviders } from "./seed/providers_seed.js";
 import adminBookingsRoutes from "./routes/AdminBookings.js";
 
 // Initialize express app
@@ -38,8 +40,13 @@ app.use(express.json());
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(cookieParser());
 
-// Serve static files
+// Serve static files & uploads
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
 
 //Routes
 app.use("/api/auth", authRoutes);
@@ -64,16 +71,6 @@ import Payment from "./models/Payment.js";
 import { servicesData } from "./data/servicesData.js";
 import { servicesDetailsData } from "./data/servicesDetailsData.js";
 
-// Add this after your other middleware
-if (process.env.NODE_ENV === "development") {
-  app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-      message: "Server error",
-      error: err.message,
-    });
-  });
-}
 
 const USERS = [
   { first_name: 'Priya', last_name: 'Sharma', email: 'user1@example.com', phone: '9876543001', password: 'password123', role: 'user' },
@@ -93,13 +90,14 @@ const PROVIDER_USERS = [
 ];
 
 const PROVIDER_PROFILES = [
-  { name: 'Meena Pillai', email: 'provider1@example.com', phone: '9800000001', category: "Women's Salon & Spa", skills: ['Hair cut', 'Facial', 'Manicure', 'Pedicure', 'Threading'], experienceYears: 7, hourlyRate: 600, bio: 'Expert in all aspects of women\'s grooming with 7+ years of experience. Specialises in bridal packages and skin treatments.', isVerified: true, averageRating: 4.8, ratingCount: 24, location: { type: 'Point', coordinates: [72.8777, 19.0760], address: 'Andheri West, Mumbai, Maharashtra' }, contact: { phone: '9800000001', email: 'provider1@example.com', address: 'Andheri West, Mumbai' } },
-  { name: 'Arjun Nair', email: 'provider2@example.com', phone: '9800000002', category: "Men's Salon & Spa", skills: ['Haircut', 'Beard grooming', 'Face massage', 'Hair colour', 'De-tan'], experienceYears: 5, hourlyRate: 450, bio: 'Certified men\'s grooming expert. Known for precision cuts and relaxing massages.', isVerified: true, averageRating: 4.6, ratingCount: 18, location: { type: 'Point', coordinates: [77.2090, 28.6139], address: 'Connaught Place, New Delhi' }, contact: { phone: '9800000002', email: 'provider2@example.com', address: 'Connaught Place, New Delhi' } },
-  { name: 'Kavya Reddy', email: 'provider3@example.com', phone: '9800000003', category: "AC & Appliances Repair", skills: ['AC service', 'AC repair', 'Washing machine repair', 'Refrigerator repair', 'Microwave repair'], experienceYears: 8, hourlyRate: 800, bio: 'Experienced technician for all AC brands and home appliances. Quick diagnosis and guaranteed repair.', isVerified: true, averageRating: 4.7, ratingCount: 31, location: { type: 'Point', coordinates: [80.2707, 13.0827], address: 'Anna Nagar, Chennai, Tamil Nadu' }, contact: { phone: '9800000003', email: 'provider3@example.com', address: 'Anna Nagar, Chennai' } },
-  { name: 'Ravi Kumar', email: 'provider4@example.com', phone: '9800000004', category: "Cleaning & Pest Control", skills: ['Home deep cleaning', 'Sofa cleaning', 'Carpet cleaning', 'Cockroach control', 'Termite control'], experienceYears: 6, hourlyRate: 350, bio: 'Professional cleaning and pest control with eco-friendly products. Satisfaction guaranteed.', isVerified: true, averageRating: 4.5, ratingCount: 20, location: { type: 'Point', coordinates: [77.5946, 12.9716], address: 'Indiranagar, Bangalore, Karnataka' }, contact: { phone: '9800000004', email: 'provider4@example.com', address: 'Indiranagar, Bangalore' } },
-  { name: 'Sunita Rao', email: 'provider5@example.com', phone: '9800000005', category: "Electrician, Plumber & Carpenter", skills: ['Wiring', 'Fan installation', 'Pipe repair', 'Tap fitting', 'Furniture assembly'], experienceYears: 10, hourlyRate: 700, bio: 'Multi-trade professional handling electrical, plumbing, and carpentry work. Available 7 days a week.', isVerified: true, averageRating: 4.9, ratingCount: 42, location: { type: 'Point', coordinates: [73.8567, 18.5204], address: 'Kothrud, Pune, Maharashtra' }, contact: { phone: '9800000005', email: 'provider5@example.com', address: 'Kothrud, Pune' } },
-  { name: 'Deepak Joshi', email: 'provider6@example.com', phone: '9800000006', category: "Painting & Waterproofing", skills: ['Interior painting', 'Exterior painting', 'Waterproofing', 'Texture paint', 'Wall putty'], experienceYears: 9, hourlyRate: 500, bio: 'Expert painter and waterproofing specialist with 9 years of residential and commercial projects.', isVerified: true, averageRating: 4.4, ratingCount: 15, location: { type: 'Point', coordinates: [72.5714, 23.0225], address: 'Satellite, Ahmedabad, Gujarat' }, contact: { phone: '9800000006', email: 'provider6@example.com', address: 'Satellite, Ahmedabad' } },
+  { name: 'Meena Pillai', email: 'provider1@example.com', phone: '9800000001', category: "Women's Salon & Spa", skills: ['Hair cut', 'Facial', 'Manicure', 'Pedicure', 'Threading'], experienceYears: 7, hourlyRate: 600, bio: 'Expert in all aspects of women\'s grooming with 7+ years of experience. Specialises in bridal packages and skin treatments.', pincode: '400053', isVerified: true, averageRating: 4.8, ratingCount: 24, location: { type: 'Point', coordinates: [72.8777, 19.0760], address: 'Andheri West, Mumbai, Maharashtra', pincode: '400053' }, contact: { phone: '9800000001', email: 'provider1@example.com', address: 'Andheri West, Mumbai', pincode: '400053' } },
+  { name: 'Arjun Nair', email: 'provider2@example.com', phone: '9800000002', category: "Men's Salon & Spa", skills: ['Haircut', 'Beard grooming', 'Face massage', 'Hair colour', 'De-tan'], experienceYears: 5, hourlyRate: 450, bio: 'Certified men\'s grooming expert. Known for precision cuts and relaxing massages.', pincode: '110001', isVerified: true, averageRating: 4.6, ratingCount: 18, location: { type: 'Point', coordinates: [77.2090, 28.6139], address: 'Connaught Place, New Delhi', pincode: '110001' }, contact: { phone: '9800000002', email: 'provider2@example.com', address: 'Connaught Place, New Delhi', pincode: '110001' } },
+  { name: 'Kavya Reddy', email: 'provider3@example.com', phone: '9800000003', category: "AC & Appliances Repair", skills: ['AC service', 'AC repair', 'Washing machine repair', 'Refrigerator repair', 'Microwave repair'], experienceYears: 8, hourlyRate: 800, bio: 'Experienced technician for all AC brands and home appliances. Quick diagnosis and guaranteed repair.', pincode: '600040', isVerified: true, averageRating: 4.7, ratingCount: 31, location: { type: 'Point', coordinates: [80.2707, 13.0827], address: 'Anna Nagar, Chennai, Tamil Nadu', pincode: '600040' }, contact: { phone: '9800000003', email: 'provider3@example.com', address: 'Anna Nagar, Chennai', pincode: '600040' } },
+  { name: 'Ravi Kumar', email: 'provider4@example.com', phone: '9800000004', category: "Cleaning & Pest Control", skills: ['Home deep cleaning', 'Sofa cleaning', 'Carpet cleaning', 'Cockroach control', 'Termite control'], experienceYears: 6, hourlyRate: 350, bio: 'Professional cleaning and pest control with eco-friendly products. Satisfaction guaranteed.', pincode: '560038', isVerified: true, averageRating: 4.5, ratingCount: 20, location: { type: 'Point', coordinates: [77.5946, 12.9716], address: 'Indiranagar, Bangalore, Karnataka', pincode: '560038' }, contact: { phone: '9800000004', email: 'provider4@example.com', address: 'Indiranagar, Bangalore', pincode: '560038' } },
+  { name: 'Sunita Rao', email: 'provider5@example.com', phone: '9800000005', category: "Electrician, Plumber & Carpenter", skills: ['Wiring', 'Fan installation', 'Pipe repair', 'Tap fitting', 'Furniture assembly'], experienceYears: 10, hourlyRate: 700, bio: 'Multi-trade professional handling electrical, plumbing, and carpentry work. Available 7 days a week.', pincode: '411038', isVerified: true, averageRating: 4.9, ratingCount: 42, location: { type: 'Point', coordinates: [73.8567, 18.5204], address: 'Kothrud, Pune, Maharashtra', pincode: '411038' }, contact: { phone: '9800000005', email: 'provider5@example.com', address: 'Kothrud, Pune', pincode: '411038' } },
+  { name: 'Deepak Joshi', email: 'provider6@example.com', phone: '9800000006', category: "Painting & Waterproofing", skills: ['Interior painting', 'Exterior painting', 'Waterproofing', 'Texture paint', 'Wall putty'], experienceYears: 9, hourlyRate: 500, bio: 'Expert painter and waterproofing specialist with 9 years of residential and commercial projects.', pincode: '380015', isVerified: true, averageRating: 4.4, ratingCount: 15, location: { type: 'Point', coordinates: [72.5714, 23.0225], address: 'Satellite, Ahmedabad, Gujarat', pincode: '380015' }, contact: { phone: '9800000006', email: 'provider6@example.com', address: 'Satellite, Ahmedabad', pincode: '380015' } },
 ];
+
 
 const REVIEWS_TEMPLATE = [
   { rating: 5, comment: 'Absolutely fantastic service! Very professional and thorough.' },
@@ -178,23 +176,33 @@ async function seedIfNeeded() {
     // Seed regular users
     const savedUsers = [];
     for (const u of USERS) {
-      let doc = await User.findOne({ email: u.email });
+      let doc = await User.findOne({ $or: [{ email: u.email }, { phone: u.phone }] });
       if (!doc) { doc = await new User(u).save(); }
       savedUsers.push(doc);
     }
 
-    // Seed providers
+    // Seed providers (30 providers per service category = 180 total)
+    const { users: dummyUsers, profiles: dummyProfiles } = generateAllDummyProviders();
     const savedProviders = [];
-    for (let i = 0; i < PROVIDER_USERS.length; i++) {
-      const pu = PROVIDER_USERS[i];
-      const pp = PROVIDER_PROFILES[i];
-      let userDoc = await User.findOne({ email: pu.email });
-      if (!userDoc) { userDoc = await new User(pu).save(); }
-      let provDoc = await ServiceProvider.findOne({ email: pp.email });
-      if (!provDoc) {
-        provDoc = await new ServiceProvider({ ...pp, user: userDoc._id }).save();
+
+    const existingProvCount = await ServiceProvider.countDocuments();
+    if (existingProvCount < dummyProfiles.length) {
+      console.log(`Seeding ${dummyProfiles.length} dummy service providers (30 per service category)...`);
+      for (let i = 0; i < dummyProfiles.length; i++) {
+        const pu = dummyUsers[i];
+        const pp = dummyProfiles[i];
+        let userDoc = await User.findOne({ $or: [{ email: pu.email }, { phone: pu.phone }] });
+        if (!userDoc) { userDoc = await new User(pu).save(); }
+        let provDoc = await ServiceProvider.findOne({ $or: [{ email: pp.email }, { phone: pp.phone }] });
+        if (!provDoc) {
+          provDoc = await new ServiceProvider({ ...pp, user: userDoc._id }).save();
+        }
+        savedProviders.push(provDoc);
       }
-      savedProviders.push(provDoc);
+      console.log(`Seeded ${savedProviders.length} service providers successfully (30 in each service).`);
+    } else {
+      const allP = await ServiceProvider.find().limit(20);
+      savedProviders.push(...allP);
     }
 
     // Seed reviews
@@ -232,16 +240,38 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/Genie";
   try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 3000 });
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 2000 });
     console.log(`Connected to MongoDB at ${uri}`);
   } catch (err) {
-    console.log("Local MongoDB server not reachable. Starting In-Memory MongoDB for development environment...");
+    console.log("Local MongoDB server not reachable. Starting Persistent Embedded MongoDB for development environment...");
     try {
       const { MongoMemoryServer } = await import("mongodb-memory-server");
-      const mongoServer = await MongoMemoryServer.create();
-      const memUri = mongoServer.getUri();
+      const fs = await import("fs");
+      const dbPath = process.env.MONGOMS_DB_PATH || path.join(__dirname, "data", "db");
+      if (!fs.existsSync(dbPath)) {
+        fs.mkdirSync(dbPath, { recursive: true });
+      }
+
+      const mongoServer = await MongoMemoryServer.create({
+        instance: {
+          dbPath,
+          dbName: "Genie",
+          storageEngine: "wiredTiger",
+        },
+      });
+      const memUri = mongoServer.getUri("Genie");
       await mongoose.connect(memUri);
-      console.log(`Connected to MongoMemoryServer at ${memUri}`);
+      console.log(`Connected to Persistent Embedded MongoDB at ${memUri} (Data saved to: ${dbPath})`);
+
+      const cleanExit = async () => {
+        try {
+          await mongoose.disconnect();
+          await mongoServer.stop({ doCleanup: false });
+        } catch (e) {}
+        process.exit(0);
+      };
+      process.on("SIGINT", cleanExit);
+      process.on("SIGTERM", cleanExit);
     } catch (memErr) {
       console.error("Failed to initialize MongoMemoryServer:", memErr);
       process.exit(1);
@@ -251,6 +281,17 @@ async function startServer() {
   await seedIfNeeded();
 
   app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+}
+
+// Global error-handling middleware — must be registered AFTER all routes
+if (process.env.NODE_ENV === "development") {
+  app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  });
 }
 
 startServer();

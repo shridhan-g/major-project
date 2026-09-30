@@ -24,7 +24,10 @@ router.put("/:bookingId/status", async (req, res) => {
         const validStatuses = [
             "SERVICE_BOOKED",
             "PROVIDER_ASSIGNED",
+            "ACCEPTED",
+            "IN_PROGRESS",
             "SERVICE_COMPLETED",
+            "CANCELLED",
         ];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: "Invalid status" });

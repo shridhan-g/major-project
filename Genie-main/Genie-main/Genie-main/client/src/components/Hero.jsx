@@ -1,32 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, CalendarCheck, LayoutDashboard, Briefcase } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
-const QUICK_CATEGORIES = [
-    "Cleaning & Pest Control",
-    "AC & Appliances",
-    "Women's Salon & Spa",
-    "Men's Salon & Spa",
-    "Plumbing",
-    "Electrical",
-];
-
-const STATS = [
-    { value: "10+", label: "Services offered" },
-    { value: "150k+", label: "Happy users" },
-    { value: "3k+", label: "Verified pros" },
+const STATS_KEYS = [
+    { value: "10+", labelKey: "hero_stat_services" },
+    { value: "150k+", labelKey: "hero_stat_users" },
+    { value: "3k+", labelKey: "hero_stat_pros" },
 ];
 
 export default function Hero() {
     const navigate = useNavigate();
+    const { lang } = useLang();
 
     const scrollToServices = () => {
         document
             .getElementById("services")
             ?.scrollIntoView({ behavior: "smooth" });
-    };
-
-    const handleCategory = (category) => {
-        navigate(`/providers?category=${encodeURIComponent(category)}`);
     };
 
     return (
@@ -39,31 +29,18 @@ export default function Hero() {
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-20 lg:py-28 flex flex-col items-center text-center">
                 <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-8 text-blue-200">
                     <Sparkles size={14} className="text-orange-400" />
-                    Trusted Local Service Platform
+                    {t(lang, "hero_badge")}
                 </span>
 
                 <h1 className="text-4xl sm:text-6xl lg:text-7xl font-[NeuwMachinaBold] leading-tight tracking-tight">
-                    Local Service <span className="text-gradient">Provider</span>
+                    {t(lang, "hero_title_1")} <span className="text-gradient">{t(lang, "hero_title_2")}</span>
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-slate-300 text-base sm:text-lg">
-                    Book verified professionals for cleaning, repairs, salon and
-                    more — with transparent pricing, real reviews and instant
-                    confirmation.
+                    {t(lang, "hero_subtitle")}
                 </p>
 
-                {/* Quick category tags */}
-                <div className="mt-8 flex flex-wrap justify-center gap-2">
-                    {QUICK_CATEGORIES.map((category) => (
-                        <button
-                            key={category}
-                            onClick={() => handleCategory(category)}
-                            className="text-xs sm:text-sm text-slate-200 border border-white/25 rounded-full px-3.5 py-1.5 hover:bg-white/10 hover:border-blue-400 transition-colors"
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </div>
+
 
                 {/* Primary Action Buttons */}
                 <div className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
@@ -71,7 +48,7 @@ export default function Hero() {
                         onClick={scrollToServices}
                         className="group flex items-center gap-2 bg-accent-gradient text-white text-sm sm:text-base font-semibold rounded-full px-6 sm:px-7 py-3.5 shadow-glow-indigo hover:opacity-90 transition-all cursor-pointer"
                     >
-                        Book a Service
+                        {t(lang, "hero_book")}
                         <ArrowRight
                             size={18}
                             className="transition-transform group-hover:translate-x-1"
@@ -83,7 +60,7 @@ export default function Hero() {
                         className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm sm:text-base font-semibold rounded-full px-6 py-3.5 transition-all shadow-glow-orange cursor-pointer"
                     >
                         <Briefcase size={18} className="text-white" />
-                        Become a Provider
+                        {t(lang, "hero_become_provider")}
                     </Link>
 
                     <Link
@@ -91,7 +68,7 @@ export default function Hero() {
                         className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-sm sm:text-base font-semibold rounded-full px-6 py-3.5 backdrop-blur-md transition-all shadow-sm"
                     >
                         <CalendarCheck size={18} className="text-orange-400" />
-                        My Bookings
+                        {t(lang, "hero_my_bookings")}
                     </Link>
 
                     <Link
@@ -99,15 +76,15 @@ export default function Hero() {
                         className="flex items-center gap-2 bg-emerald-600/80 hover:bg-emerald-600 border border-emerald-400/40 text-white text-sm sm:text-base font-semibold rounded-full px-6 py-3.5 backdrop-blur-md transition-all shadow-sm"
                     >
                         <LayoutDashboard size={18} className="text-emerald-200" />
-                        Provider Dashboard
+                        {t(lang, "hero_provider_dashboard")}
                     </Link>
                 </div>
 
                 {/* Animated stats */}
                 <div className="mt-16 w-full grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
-                    {STATS.map((stat, i) => (
+                    {STATS_KEYS.map((stat, i) => (
                         <div
-                            key={stat.label}
+                            key={stat.labelKey}
                             className={`glass rounded-2xl px-6 py-6 flex flex-col items-center gap-1 ${
                                 i % 2 === 0
                                     ? "animate-float"
@@ -118,7 +95,7 @@ export default function Hero() {
                                 {stat.value}
                             </span>
                             <span className="text-sm text-slate-300">
-                                {stat.label}
+                                {t(lang, stat.labelKey)}
                             </span>
                         </div>
                     ))}

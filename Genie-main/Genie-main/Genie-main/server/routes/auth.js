@@ -6,7 +6,10 @@ const router = express.Router();
 
 // Verify token middleware
 const verifyToken = (req, res, next) => {
-    const token = req.cookies.token;
+    const token =
+        req.cookies.token ||
+        req.header("x-auth-token") ||
+        req.header("Authorization")?.replace("Bearer ", "");
     if (!token) {
         return res.status(401).json({ message: "Access denied" });
     }

@@ -5,7 +5,7 @@ import bookings from "./navbar/Bookings.svg";
 import cart from "./navbar/Cart.svg";
 import cartOrange from "./navbar/Cart.svg";
 
-import bg from "../../public/bg.svg";
+const bg = "/bg.svg";
 
 import arrow from "./services/arrow.svg";
 

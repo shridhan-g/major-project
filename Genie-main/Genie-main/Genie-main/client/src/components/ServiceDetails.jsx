@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { getServiceDetails } from "../utils/api";
 import ClipLoader from "react-spinners/ClipLoader";
 import { ChevronRight } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
 const ServiceDetails = ({ serviceName }) => {
     const [details, setDetails] = useState(null);
@@ -11,6 +13,7 @@ const ServiceDetails = ({ serviceName }) => {
     const [selectedSubcategory, setSelectedSubcategory] = useState(null);
     const [selectedServiceType, setSelectedServiceType] = useState(null);
     const navigate = useNavigate();
+    const { lang } = useLang();
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -72,13 +75,13 @@ const ServiceDetails = ({ serviceName }) => {
         <div className="px-6 sm:px-10 pb-8">
             <div className="flex items-center gap-2 pb-6">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {serviceName}
+                    {t(lang, serviceName)}
                 </h2>
                 {selectedSubcategory && (
                     <>
                         <ChevronRight size={18} className="text-slate-400" />
                         <span className="text-blue-600 dark:text-blue-400 font-medium">
-                            {selectedSubcategory}
+                            {t(lang, selectedSubcategory)}
                         </span>
                     </>
                 )}
@@ -121,7 +124,7 @@ const ServiceDetails = ({ serviceName }) => {
                                         />
                                     </div>
                                     <h1 className="text-sm font-semibold text-slate-800 dark:text-slate-100 text-center py-3 px-2 border-t border-slate-100 dark:border-slate-700">
-                                        {subcategory}
+                                        {t(lang, subcategory)}
                                     </h1>
                                 </button>
                             )
@@ -164,7 +167,7 @@ const ServiceDetails = ({ serviceName }) => {
                                 />
                                 <div className="flex flex-col gap-1 py-3 pr-4">
                                     <h1 className="text-lg font-semibold text-slate-900 dark:text-white">
-                                        {serviceType}
+                                        {t(lang, serviceType)}
                                     </h1>
                                     <div className="flex gap-2">
                                         {serviceType === "Salon Classic" && (

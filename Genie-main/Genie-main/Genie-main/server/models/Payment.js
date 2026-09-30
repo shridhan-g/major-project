@@ -36,7 +36,7 @@ const paymentSchema = new mongoose.Schema({
         default: 'SERVICE_BOOKED'
     },
     method: {
-        type:String,
+        type: String,
     },
     failureReason: {
         type: String,
@@ -69,9 +69,27 @@ const paymentSchema = new mongoose.Schema({
     bookingDetails: {
         serviceDate: { type: String, default: "" },
         serviceTime: { type: String, default: "" },
-        serviceAddress: { type: String, default: "" },
+        serviceAddress: { type: String, default: "" },  // legacy flat string (kept for backward-compat)
+        pincode: { type: String, default: "" },
         notes: { type: String, default: "" },
+        // Structured address snapshot (saved at booking time)
+        addressSnapshot: {
+            label: { type: String, default: "" },
+            name: { type: String, default: "" },
+            mobile: { type: String, default: "" },
+            house: { type: String, default: "" },
+            area: { type: String, default: "" },
+            landmark: { type: String, default: "" },
+            pincode: { type: String, default: "" },
+            city: { type: String, default: "" },
+            district: { type: String, default: "" },
+            state: { type: String, default: "" },
+            postOffice: { type: String, default: "" },
+            latitude: { type: Number, default: null },
+            longitude: { type: Number, default: null },
+        },
     },
+
     attempts: {
         type: Number,
     },

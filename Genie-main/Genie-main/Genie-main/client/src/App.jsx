@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import PortalLayout from "./components/PortalLayout";
 import Layout from "./layout/layout";
 import HomePage from "./pages/HomePage";
+import AvailableServices from "./pages/AvailableServices";
 import ServiceList from "./pages/ServiceList";
 import ServiceDetails from "./components/ServiceDetails";
 import Cart from "./pages/Cart";
@@ -18,6 +19,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { PortalProvider } from "./context/PortalContext";
 import { CartProvider } from "./context/CartContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import { AnimatePresence } from "framer-motion";
 
 function AppContent() {
@@ -34,6 +36,7 @@ function AppContent() {
                     <Route path="/" element={<Layout />}>
                         <Route index element={<HomePage />} />
                         <Route path="/services">
+                            <Route index element={<AvailableServices />} />
                             <Route
                                 path=":serviceName"
                                 element={<ServiceDetails />}
@@ -51,6 +54,7 @@ function AppContent() {
                                 element={<PortalLayout />}
                             />
                         </Route>
+                        <Route path="/available-services" element={<AvailableServices />} />
                         <Route path="/viewcart" element={<Cart />} />
                         <Route path="/bookings" element={<Bookings />} />
                         <Route path="/providers" element={<Providers />} />
@@ -86,11 +90,13 @@ function AppContent() {
 function App() {
     return (
         <ThemeProvider>
-            <AnimatePresence mode="wait">
-                <AuthProvider>
-                    <AppContent />
-                </AuthProvider>
-            </AnimatePresence>
+            <LanguageProvider>
+                <AnimatePresence mode="wait">
+                    <AuthProvider>
+                        <AppContent />
+                    </AuthProvider>
+                </AnimatePresence>
+            </LanguageProvider>
         </ThemeProvider>
     );
 }

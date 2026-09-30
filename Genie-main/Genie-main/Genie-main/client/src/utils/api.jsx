@@ -10,6 +10,15 @@ const axiosInstance = axios.create({
     },
 });
 
+// Attach Authorization header if stored in localStorage
+axiosInstance.interceptors.request.use((config) => {
+    const token = localStorage.getItem("genie_token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 // User Registration API
 export const register = async (userData) => {
     try {
@@ -17,6 +26,9 @@ export const register = async (userData) => {
             `${API_URL}/users/register`,
             userData
         );
+        if (response.data?.token) {
+            localStorage.setItem("genie_token", response.data.token);
+        }
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
@@ -30,6 +42,9 @@ export const login = async (userData) => {
             `${API_URL}/users/login`,
             userData
         );
+        if (response.data?.token) {
+            localStorage.setItem("genie_token", response.data.token);
+        }
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
@@ -58,6 +73,7 @@ export const getUserDetails = async () => {
 // User Logout API
 export const logout = async () => {
     try {
+        localStorage.removeItem("genie_token");
         await axiosInstance.post(`${API_URL}/users/logout`);
     } catch (error) {
         console.error("Logout failed:", error);
@@ -197,7 +213,88 @@ export const getUserBookings = async (userId) => {
     }
 };
 
-//Admin API
+export const cancelUserBooking = async (bookingId, reason = "") => {
+    try {
+        const response = await axiosInstance.put(
+            `${API_URL}/razorpay/bookings/${bookingId}/cancel`,
+            { reason }
+        );
+        return response.data;
+    } catch (error) {
+        console.error("Error cancelling booking:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// ─── Address Management APIs ──────────────────────────────────────────────────
+
+// Get all saved addresses
+export const getAddresses = async () => {
+    try {
+        const response = await axiosInstance.get(`${API_URL}/users/addresses`);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching addresses:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// Add a new address
+export const addAddress = async (addressData) => {
+    try {
+        const response = await axiosInstance.post(`${API_URL}/users/addresses`, addressData);
+        return response.data;
+    } catch (error) {
+        console.error("Error adding address:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// Update an existing address
+export const updateAddress = async (id, addressData) => {
+    try {
+        const response = await axiosInstance.put(`${API_URL}/users/addresses/${id}`, addressData);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating address:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// Delete an address
+export const deleteAddress = async (id) => {
+    try {
+        const response = await axiosInstance.delete(`${API_URL}/users/addresses/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting address:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// Set an address as default
+export const setDefaultAddress = async (id) => {
+    try {
+        const response = await axiosInstance.put(`${API_URL}/users/addresses/${id}/default`);
+        return response.data;
+    } catch (error) {
+        console.error("Error setting default address:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+// Lookup a pincode via backend proxy (India Post API)
+export const lookupPincode = async (pincode) => {
+    try {
+        const response = await axiosInstance.get(`${API_URL}/users/addresses/pincode/${pincode}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error looking up pincode:", error);
+        throw error.response?.data || error.message;
+    }
+};
+
+
 export const getDashboardStats = async (timeRange = "all") => {
     try {
         const response = await axiosInstance.get(
@@ -452,12 +549,95 @@ export const deleteServiceDetail = async (serviceId, detailId) => {
 
 // ---------- Provider APIs ----------
 
-// Register as a service provider (creates user + provider profile)
-export const registerProvider = async (providerData) => {
+// Mobile OTP — Send 6-digit OTP (10-minute validity)
+export const sendMobileOtp = async (phone) => {
     try {
         const response = await axiosInstance.post(
+            `${API_URL}/providers/mobile/send-otp`,
+            { phone }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Mobile OTP — Verify 6-digit OTP
+export const verifyMobileOtp = async (sessionId, otp) => {
+    try {
+        const response = await axiosInstance.post(
+            `${API_URL}/providers/mobile/verify-otp`,
+            { sessionId, otp }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Email OTP — Send 6-digit OTP to provider email (10-minute validity)
+export const sendEmailOtp = async (email) => {
+    try {
+        const response = await axiosInstance.post(
+            `${API_URL}/providers/email/send-otp`,
+            { email }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Email OTP — Verify 6-digit OTP
+export const verifyEmailOtp = async (sessionId, otp, email = "") => {
+    try {
+        const response = await axiosInstance.post(
+            `${API_URL}/providers/email/verify-otp`,
+            { sessionId, otp, email }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Aadhaar OTP (retained for backward compatibility)
+export const sendAadhaarOtp = async (aadhaarNumber) => {
+    try {
+        const response = await axiosInstance.post(
+            `${API_URL}/providers/aadhaar/send-otp`,
+            { aadhaarNumber }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const verifyAadhaarOtp = async (sessionId, otp) => {
+    try {
+        const response = await axiosInstance.post(
+            `${API_URL}/providers/aadhaar/verify-otp`,
+            { sessionId, otp }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Register as a service provider (creates user + provider profile with pending status)
+// Supports FormData for file uploads (profile photo + ID document) or regular JSON
+export const registerProvider = async (providerData) => {
+    try {
+        const isFormData = typeof FormData !== "undefined" && providerData instanceof FormData;
+        const config = isFormData
+            ? { headers: { "Content-Type": "multipart/form-data" } }
+            : {};
+        const response = await axiosInstance.post(
             `${API_URL}/providers/register`,
-            providerData
+            providerData,
+            config
         );
         return response.data;
     } catch (error) {
@@ -576,17 +756,43 @@ export const submitProviderReview = async (providerId, reviewData) => {
 
 // ---------- Admin Provider APIs ----------
 
-// Get all providers including unverified
-export const getAllProvidersAdmin = async () => {
+// Get all providers (supports ?status=pending|approved|rejected|all)
+export const getAllProvidersAdmin = async (status = "all") => {
     try {
-        const response = await axiosInstance.get(`${API_URL}/admin/providers`);
+        const query = status && status !== "all" ? `?status=${status}` : "";
+        const response = await axiosInstance.get(`${API_URL}/admin/providers${query}`);
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;
     }
 };
 
-// Verify / unverify a provider
+// Approve a provider application
+export const approveProvider = async (providerId) => {
+    try {
+        const response = await axiosInstance.put(
+            `${API_URL}/admin/providers/${providerId}/approve`
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Reject a provider application with reason
+export const rejectProvider = async (providerId, reason = "") => {
+    try {
+        const response = await axiosInstance.put(
+            `${API_URL}/admin/providers/${providerId}/reject`,
+            { reason }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+// Verify / unverify a provider (legacy compatibility)
 export const verifyProvider = async (providerId, isVerified) => {
     try {
         const response = await axiosInstance.put(

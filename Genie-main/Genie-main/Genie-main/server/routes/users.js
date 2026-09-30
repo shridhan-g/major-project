@@ -61,7 +61,7 @@ router.post("/register", async (req, res) => {
         jwt.sign(
             payload,
             secret,
-            { expiresIn: "1d" },
+            { expiresIn: "30d" },
             (err, token) => {
                 if (err) throw err;
                 res.cookie("token", token, {
@@ -69,9 +69,10 @@ router.post("/register", async (req, res) => {
                     secure: process.env.NODE_ENV === "production",
                     sameSite:
                         process.env.NODE_ENV === "production" ? "None" : "Lax",
-                    maxAge: 24 * 60 * 60 * 1000, // 1 day
+                    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
                 }).json({
                     success: true,
+                    token,
                     user: {
                         _id: user._id,
                         first_name: user.first_name,
@@ -126,7 +127,7 @@ router.post("/login", async (req, res) => {
         jwt.sign(
             payload,
             secret,
-            { expiresIn: "1d" },
+            { expiresIn: "30d" },
             (err, token) => {
                 if (err) throw err;
                 res.cookie("token", token, {
@@ -134,9 +135,10 @@ router.post("/login", async (req, res) => {
                     secure: process.env.NODE_ENV === "production",
                     sameSite:
                         process.env.NODE_ENV === "production" ? "None" : "Lax",
-                    maxAge: 24 * 60 * 60 * 1000, // 1 day
+                    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
                 }).json({
                     success: true,
+                    token,
                     user: {
                         _id: user._id,
                         first_name: user.first_name,
@@ -170,7 +172,10 @@ router.get("/user", async (req, res) => {
     res.header("Access-Control-Allow-Credentials", true);
 
     try {
-        const token = req.cookies.token;
+        const token =
+            req.cookies.token ||
+            req.header("x-auth-token") ||
+            req.header("Authorization")?.replace("Bearer ", "");
         if (!token)
             return res.status(401).json({
                 msg: "No token, authorization denied",
@@ -282,4 +287,138 @@ router.delete("/cart", auth, async (req, res) => {
     }
 });
 
+// ─── Address Management Routes ───────────────────────────────────────────────
+
+// GET all saved addresses for the logged-in user
+router.get("/addresses", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select("addresses");
+        if (!user) return res.status(404).json({ msg: "User not found" });
+        res.json({ addresses: user.addresses || [] });
+    } catch (err) {
+        console.error("Get addresses error:", err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
+// POST add a new address (max 10)
+router.post("/addresses", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        if (user.addresses.length >= 10) {
+            return res.status(400).json({ msg: "Maximum 10 addresses allowed. Please delete one to add a new address." });
+        }
+
+        const { label, name, mobile, house, area, landmark, pincode, city, district, state, postOffice, latitude, longitude, isDefault } = req.body;
+
+        if (!name || !mobile || !pincode) {
+            return res.status(400).json({ msg: "Name, mobile, and pincode are required." });
+        }
+
+        // If new address is default, remove default from all others
+        if (isDefault) {
+            user.addresses.forEach(addr => { addr.isDefault = false; });
+        }
+
+        // If no addresses exist yet, make the first one default
+        const makeDefault = isDefault || user.addresses.length === 0;
+
+        user.addresses.push({ label, name, mobile, house, area, landmark, pincode, city, district, state, postOffice, latitude, longitude, isDefault: makeDefault });
+        await user.save();
+
+        res.status(201).json({ addresses: user.addresses });
+    } catch (err) {
+        console.error("Add address error:", err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
+// PUT update an existing address
+router.put("/addresses/:id", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        const address = user.addresses.id(req.params.id);
+        if (!address) return res.status(404).json({ msg: "Address not found" });
+
+        const { label, name, mobile, house, area, landmark, pincode, city, district, state, postOffice, latitude, longitude, isDefault } = req.body;
+
+        // If setting this as default, clear others first
+        if (isDefault) {
+            user.addresses.forEach(addr => { addr.isDefault = false; });
+        }
+
+        Object.assign(address, { label, name, mobile, house, area, landmark, pincode, city, district, state, postOffice, latitude, longitude, isDefault: isDefault || address.isDefault });
+
+        await user.save();
+        res.json({ addresses: user.addresses });
+    } catch (err) {
+        console.error("Update address error:", err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
+// DELETE an address
+router.delete("/addresses/:id", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        const addressIndex = user.addresses.findIndex(a => a._id.toString() === req.params.id);
+        if (addressIndex === -1) return res.status(404).json({ msg: "Address not found" });
+
+        const wasDefault = user.addresses[addressIndex].isDefault;
+        user.addresses.splice(addressIndex, 1);
+
+        // If the deleted one was default, assign default to the first remaining
+        if (wasDefault && user.addresses.length > 0) {
+            user.addresses[0].isDefault = true;
+        }
+
+        await user.save();
+        res.json({ addresses: user.addresses });
+    } catch (err) {
+        console.error("Delete address error:", err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
+// PUT set an address as default
+router.put("/addresses/:id/default", auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        user.addresses.forEach(addr => {
+            addr.isDefault = addr._id.toString() === req.params.id;
+        });
+
+        await user.save();
+        res.json({ addresses: user.addresses });
+    } catch (err) {
+        console.error("Set default address error:", err);
+        res.status(500).json({ msg: "Server Error" });
+    }
+});
+
+// GET India Post pincode lookup proxy (avoids CORS in browser)
+router.get("/addresses/pincode/:code", async (req, res) => {
+    const code = req.params.code;
+    if (!code || !/^\d{6}$/.test(code)) {
+        return res.status(400).json({ msg: "Invalid pincode. Must be 6 digits." });
+    }
+    try {
+        const axios = (await import("axios")).default;
+        const response = await axios.get(`https://api.postalpincode.in/pincode/${code}`, { timeout: 8000 });
+        res.json(response.data);
+    } catch (err) {
+        console.error("Pincode lookup error:", err.message);
+        res.status(502).json([{ Status: "Error", Message: "Pincode service unavailable" }]);
+    }
+});
+
 export default router;
+

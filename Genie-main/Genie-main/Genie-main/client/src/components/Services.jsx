@@ -1,9 +1,12 @@
 import { ArrowUpRight } from "lucide-react";
+import { useLang } from "../context/LanguageContext";
+import { t } from "../utils/translations";
 
 const Services = ({ serviceImage, serviceName, onServiceClick, delay = 0 }) => {
+    const { lang } = useLang();
     return (
         <button
-            onClick={() => onServiceClick(serviceName)}
+            onClick={() => onServiceClick && onServiceClick(serviceName)}
             style={{ animationDelay: `${delay}ms` }}
             className="card-hover animate-fade-in-up group w-full text-left bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-premium overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
@@ -16,7 +19,7 @@ const Services = ({ serviceImage, serviceName, onServiceClick, delay = 0 }) => {
             </div>
             <div className="flex items-center justify-between gap-2 px-3 py-3 border-t border-slate-100 dark:border-slate-700">
                 <h1 className="text-sm font-medium text-slate-800 dark:text-slate-100 leading-tight line-clamp-2">
-                    {serviceName}
+                    {t(lang, serviceName)}
                 </h1>
                 <ArrowUpRight
                     size={16}

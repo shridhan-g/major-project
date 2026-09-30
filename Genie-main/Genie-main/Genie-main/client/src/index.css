@@ -200,6 +200,19 @@ textarea {
         transform: translateY(0);
     }
 }
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out both;
+}
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 /* Floating decorative elements */
 .animate-float {
@@ -233,4 +246,396 @@ textarea {
 }
 .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AADHAAR VERIFICATION COMPONENT STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.aadhaar-section {
+    border-radius: 16px;
+    border: 1.5px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dark .aadhaar-section {
+    border-color: #334155;
+    background: linear-gradient(135deg, #1e293b 0%, #162032 100%);
+}
+
+/* Header */
+.aadhaar-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.aadhaar-header-icon { color: #3b82f6; flex-shrink: 0; margin-top: 2px; }
+.aadhaar-header-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.dark .aadhaar-header-title { color: #e2e8f0; }
+.aadhaar-header-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+.dark .aadhaar-header-sub { color: #94a3b8; }
+.aadhaar-demo-badge {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #f59e0b, #f97316);
+    color: #fff;
+}
+.aadhaar-real-badge {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #10b981, #059669);
+    color: #fff;
+}
+
+/* Consent */
+.aadhaar-consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1.5px dashed #94a3b8;
+    background: rgba(148,163,184,0.06);
+    transition: border-color 0.2s;
+}
+.aadhaar-consent-label:hover { border-color: #3b82f6; }
+.aadhaar-consent-checkbox {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+}
+.aadhaar-consent-text {
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: #475569;
+}
+.dark .aadhaar-consent-text { color: #94a3b8; }
+
+/* Flow container */
+.aadhaar-flow { display: flex; flex-direction: column; gap: 14px; }
+
+/* Field row — Aadhaar input + Send OTP button side-by-side */
+.aadhaar-field-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.aadhaar-input-wrapper { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.aadhaar-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+.dark .aadhaar-label { color: #94a3b8; }
+.aadhaar-input-inner { position: relative; }
+.aadhaar-number-input {
+    width: 100%;
+    font-size: 0.875rem;
+    padding: 10px 40px 10px 14px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.1em;
+}
+.aadhaar-number-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+.aadhaar-number-input:disabled { opacity: 0.6; cursor: not-allowed; }
+.dark .aadhaar-number-input {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.aadhaar-eye-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s;
+}
+.aadhaar-eye-btn:hover { color: #3b82f6; }
+.aadhaar-digits-left {
+    font-size: 0.68rem;
+    color: #94a3b8;
+}
+
+/* Send OTP button */
+.aadhaar-send-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #fff;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    flex-shrink: 0;
+}
+.aadhaar-send-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.aadhaar-send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Demo OTP hint */
+.aadhaar-demo-hint {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.3);
+    font-size: 0.75rem;
+}
+.aadhaar-demo-hint-label { font-weight: 700; color: #b45309; }
+.dark .aadhaar-demo-hint-label { color: #fbbf24; }
+.aadhaar-demo-hint-otp {
+    font-family: monospace;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: #1e293b;
+    background: #fef3c7;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.dark .aadhaar-demo-hint-otp { background: #451a03; color: #fef3c7; }
+.aadhaar-demo-hint-note { font-size: 0.68rem; color: #78716c; }
+.dark .aadhaar-demo-hint-note { color: #a8a29e; }
+
+/* Real-mode OTP info */
+.aadhaar-real-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(59,130,246,0.08);
+    border: 1px solid rgba(59,130,246,0.25);
+    font-size: 0.8rem;
+    color: #1e40af;
+    line-height: 1.5;
+}
+.dark .aadhaar-real-hint { color: #93c5fd; background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.3); }
+
+/* OTP Section */
+.aadhaar-otp-section { display: flex; flex-direction: column; gap: 12px; }
+.aadhaar-otp-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.aadhaar-otp-label { font-size: 0.78rem; font-weight: 600; color: #475569; }
+.dark .aadhaar-otp-label { color: #94a3b8; }
+.aadhaar-otp-expiry { font-size: 0.75rem; color: #64748b; }
+.dark .aadhaar-otp-expiry { color: #94a3b8; }
+.aadhaar-expiry-normal { font-weight: 700; color: #3b82f6; }
+.aadhaar-expiry-red { font-weight: 700; color: #ef4444; }
+
+/* 6-box OTP input grid */
+.aadhaar-otp-boxes {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+.aadhaar-otp-box {
+    width: 44px;
+    height: 52px;
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    border-radius: 12px;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    color: #1e293b;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    caret-color: #3b82f6;
+}
+.aadhaar-otp-box:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+    transform: scale(1.04);
+}
+.aadhaar-otp-box--filled {
+    border-color: #6366f1;
+    background: linear-gradient(135deg, #eff6ff, #eef2ff);
+}
+.aadhaar-otp-box:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.dark .aadhaar-otp-box {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f1f5f9;
+}
+.dark .aadhaar-otp-box--filled {
+    background: linear-gradient(135deg, #1e3a5f, #1e2d4f);
+    border-color: #818cf8;
+}
+
+/* Actions row */
+.aadhaar-otp-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Verify OTP button */
+.aadhaar-verify-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 20px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+}
+.aadhaar-verify-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+.aadhaar-verify-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* Resend OTP button */
+.aadhaar-resend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1.5px solid #cbd5e1;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.aadhaar-resend-btn:hover:not(:disabled) { border-color: #3b82f6; color: #3b82f6; }
+.aadhaar-resend-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.dark .aadhaar-resend-btn { border-color: #475569; color: #94a3b8; }
+.dark .aadhaar-resend-btn:hover:not(:disabled) { border-color: #60a5fa; color: #60a5fa; }
+
+/* Attempts remaining */
+.aadhaar-attempts {
+    font-size: 0.73rem;
+    color: #f59e0b;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Spinner animation */
+.aadhaar-spin {
+    animation: aadhaar-rotate 0.9s linear infinite;
+}
+@keyframes aadhaar-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Error message */
+.aadhaar-error {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    color: #dc2626;
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+.dark .aadhaar-error { color: #f87171; }
+
+/* ─── Verified Banner ─── */
+.aadhaar-verified-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
+    border: 1.5px solid #6ee7b7;
+    color: #065f46;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    animation: aadhaar-pop-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.dark .aadhaar-verified-banner {
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+    border-color: #34d399;
+    color: #d1fae5;
+}
+.aadhaar-shield-icon { color: #10b981; }
+
+@keyframes aadhaar-pop-in {
+    from { opacity: 0; transform: scale(0.88); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* Responsive OTP boxes on small screens */
+@media (max-width: 400px) {
+    .aadhaar-otp-box { width: 36px; height: 44px; font-size: 1.1rem; }
+    .aadhaar-otp-boxes { gap: 5px; }
 }
