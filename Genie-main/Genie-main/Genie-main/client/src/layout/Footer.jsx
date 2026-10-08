@@ -39,6 +39,9 @@ export default function Footer() {
                     <Link to="/provider/dashboard" className="hover:text-blue-400 transition-colors">
                         {t(lang, "footer_dashboard")}
                     </Link>
+                    <Link to="/admin" className="hover:text-orange-400 transition-colors text-slate-400">
+                        Admin Portal
+                    </Link>
                 </div>
             </div>
             <div className="border-t border-slate-700/70">

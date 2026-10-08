@@ -63,9 +63,17 @@ const SERVICE_IMAGES = {
     "furniture": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=500&auto=format&fit=crop&q=80",
     "lock": "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=80",
 
-    // Painting
+    // Painting & Waterproofing
     "painting": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=500&auto=format&fit=crop&q=80",
     "waterproofing": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=500&auto=format&fit=crop&q=80",
+    "room": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=500&auto=format&fit=crop&q=80",
+    "wall": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=500&auto=format&fit=crop&q=80",
+    "terrace": "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=500&auto=format&fit=crop&q=80",
+    "seepage": "https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=500&auto=format&fit=crop&q=80",
+    "damp": "https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=500&auto=format&fit=crop&q=80",
+    "polish": "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=500&auto=format&fit=crop&q=80",
+    "enamel": "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=80",
+    "grout": "https://images.unsplash.com/photo-1620626011761-996317b8d101?w=500&auto=format&fit=crop&q=80",
 };
 
 function getServiceImageUrl(title, categoryName) {
@@ -291,7 +299,7 @@ export default function AvailableServices() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto pb-16 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto pb-16 px-4 sm:px-6 pt-8">
             {/* Page Header */}
             <div className="pt-2 pb-6 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-widest mb-1.5">

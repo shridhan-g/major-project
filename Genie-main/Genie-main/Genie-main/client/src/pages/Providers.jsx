@@ -271,7 +271,7 @@ export default function Providers() {
     const providerWord = providerCount === 1 ? t(lang, "providers_provider") : t(lang, "providers_providers");
 
     return (
-        <div className="max-w-7xl mx-auto pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-8">
             <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] text-slate-900 dark:text-white pb-2">
                 {t(lang, "providers_heading")} <span className="text-gradient">{t(lang, "providers_heading_2")}</span>
             </h1>

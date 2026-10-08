@@ -204,7 +204,10 @@ router.get("/user", async (req, res) => {
 
 const auth = async (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        const token =
+            req.cookies.token ||
+            req.header("x-auth-token") ||
+            req.header("Authorization")?.replace("Bearer ", "");
         if (!token) {
             return res
                 .status(401)

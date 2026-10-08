@@ -282,7 +282,7 @@ export default function Cart() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col lg:flex-row gap-6 pb-8 pt-8">
             <div className="w-full lg:w-3/4 flex flex-col gap-6">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] uppercase tracking-wider text-slate-900 dark:text-white pb-6">

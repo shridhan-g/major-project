@@ -146,7 +146,7 @@ export default function ProviderDashboard() {
 
     if (!isAuthenticated) {
         return (
-            <div className="pb-10 text-center">
+            <div className="pb-10 text-center px-4 sm:px-6 pt-8">
                 <p className="text-slate-500 dark:text-slate-400">
                     Please login to view your provider dashboard.
                 </p>
@@ -160,7 +160,7 @@ export default function ProviderDashboard() {
 
     if (notFound || !profile) {
         return (
-            <div className="pb-10 text-center">
+            <div className="pb-10 text-center px-4 sm:px-6 pt-8">
                 <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider pb-3 text-slate-900 dark:text-white">
                     {t(lang, "Provider Dashboard")}
                 </h1>
@@ -194,7 +194,7 @@ export default function ProviderDashboard() {
         : bookings;
 
     return (
-        <div className="max-w-4xl mx-auto pb-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-10 pt-8">
             {/* Top Dashboard Banner */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>

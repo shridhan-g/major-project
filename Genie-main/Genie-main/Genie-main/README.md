@@ -106,9 +106,9 @@ Genie is an innovative on-demand home services platform designed to revolutioniz
 
 ### To access the admin panel, use the following credentials:
 ```https://yourgenie.vercel.app/```
-- Admin Email: ```admin@gmail```
+- Admin Email: ```admin@gmail.com```
 - Admin Password: ```admin@1234```
-- Admin Email: ```/admin```
+- Admin URL: ```/admin```
 
 ## 🌈 Benefits
 

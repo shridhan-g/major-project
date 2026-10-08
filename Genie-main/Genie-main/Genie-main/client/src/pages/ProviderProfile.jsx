@@ -105,7 +105,7 @@ export default function ProviderProfile() {
     const reviews = provider.reviews || [];
 
     return (
-        <div className="max-w-4xl mx-auto pb-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-10 pt-8">
             <div className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 sm:p-8 mb-8">
                 <div className="pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full bg-blue-600/10 blur-2xl" />
                 <div className="relative flex flex-wrap items-start justify-between gap-4">

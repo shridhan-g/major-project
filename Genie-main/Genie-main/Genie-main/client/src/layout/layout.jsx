@@ -8,10 +8,10 @@ export default function Layout() {
             <div className="w-full fixed max-sm:px-5 z-50">
                 <Navbar />
             </div>
-            <div className="flex-grow mx-10 mt-24 max-sm:px-5">
+            <div className="flex-grow mt-16">
                 <Outlet />
             </div>
-            <div className="mt-auto mx-10 max-sm:px-5">
+            <div className="mt-auto">
                 <Footer />
             </div>
         </div>

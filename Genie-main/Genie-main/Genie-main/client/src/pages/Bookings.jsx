@@ -71,7 +71,7 @@ export default function Bookings() {
             const interval = setInterval(() => fetchBookings(false), 4000);
             return () => clearInterval(interval);
         }
-    }, [isAuthenticated, user, navigate]);
+    }, [isAuthenticated, user, navigate, openLogin]);
 
     const handleOpenCancelModal = (booking) => {
         setCancellingBooking(booking);
@@ -101,7 +101,7 @@ export default function Bookings() {
 
     if (loading) {
         return (
-            <div className="pb-8">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 pt-8">
                 <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider pb-6 text-slate-900 dark:text-white">
                     {t(lang, "bookings_loading")}
                 </h1>
@@ -111,7 +111,7 @@ export default function Bookings() {
 
     if (error) {
         return (
-            <div className="pb-8">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 pt-8">
                 <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider pb-6 text-slate-900 dark:text-white">
                     {t(lang, "bookings_heading")} {t(lang, "bookings_heading_2")}
                 </h1>
@@ -122,7 +122,7 @@ export default function Bookings() {
 
     if (bookings.length === 0) {
         return (
-            <div className="relative min-h-[50vh]">
+            <div className="relative min-h-[50vh] max-w-5xl mx-auto px-4 sm:px-6 pt-8">
                 <h1 className="text-3xl font-[NeuwMachinaBold] uppercase tracking-wider pb-6 text-slate-900 dark:text-white">
                     {t(lang, "bookings_heading")} <span className="text-gradient">{t(lang, "bookings_heading_2")}</span>
                 </h1>
@@ -134,7 +134,7 @@ export default function Bookings() {
     }
 
     return (
-        <div className="max-w-5xl mx-auto pb-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-8 pt-8">
             <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
                 <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] uppercase tracking-wider text-slate-900 dark:text-white">
                     {t(lang, "bookings_heading")} <span className="text-gradient">{t(lang, "bookings_heading_2")}</span>

@@ -58,6 +58,15 @@ const CATEGORY_IMAGE_MAP = [
     { keys: ["manicure", "pedicure", "nail", "gel"], url: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?w=400&auto=format&fit=crop&q=80", emoji: "💅" },
     { keys: ["massage", "spa", "stress", "pain", "relief", "swedish"], url: "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&auto=format&fit=crop&q=80", emoji: "💆" },
     { keys: ["hair color", "color", "botox", "keratin", "hair care"], url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&auto=format&fit=crop&q=80", emoji: "💇" },
+
+    // Painting & Waterproofing
+    { keys: ["consultation", "inspection", "laser", "diagnostic"], url: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=400&auto=format&fit=crop&q=80", emoji: "📋" },
+    { keys: ["room", "interior", "wall", "paint", "bhk", "accent", "texture"], url: "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400&auto=format&fit=crop&q=80", emoji: "🎨" },
+    { keys: ["rental", "refresh", "budget", "express", "touch-up"], url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=400&auto=format&fit=crop&q=80", emoji: "🏠" },
+    { keys: ["wood", "polish", "enamel", "grill", "gate", "varnish"], url: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=400&auto=format&fit=crop&q=80", emoji: "🚪" },
+    { keys: ["waterproof", "terrace", "roof", "drain", "coating"], url: "https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?w=400&auto=format&fit=crop&q=80", emoji: "🌧️" },
+    { keys: ["damp", "seepage", "efflorescence", "crack", "leak"], url: "https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=400&auto=format&fit=crop&q=80", emoji: "🛡️" },
+    { keys: ["grout", "grouting", "epoxy", "tile joint", "tile"], url: "https://images.unsplash.com/photo-1620626011761-996317b8d101?w=400&auto=format&fit=crop&q=80", emoji: "🧼" },
 ];
 
 const findMatchedImage = (titleOrName) => {
@@ -78,7 +87,7 @@ const CategoryTileImage = ({ src, name }) => {
 
     const initialSrc =
         src && src.trim() !== "" && !src.includes("undefined")
-            ? `${backendUrl}${src.startsWith("/") ? "" : "/"}${src}`
+            ? (src.startsWith("http://") || src.startsWith("https://") ? src : `${backendUrl}${src.startsWith("/") ? "" : "/"}${src}`)
             : match.url;
 
     const [imgSrc, setImgSrc] = useState(initialSrc);
@@ -121,7 +130,7 @@ const ServiceImage = ({ src, title, className = "w-36 h-24" }) => {
 
     const initialSrc =
         src && src.trim() !== "" && !src.includes("undefined")
-            ? `${backendUrl}${src.startsWith("/") ? "" : "/"}${src}`
+            ? (src.startsWith("http://") || src.startsWith("https://") ? src : `${backendUrl}${src.startsWith("/") ? "" : "/"}${src}`)
             : match.url;
 
     const [imgSrc, setImgSrc] = useState(initialSrc);
@@ -441,7 +450,7 @@ const ServiceList = () => {
     const hasLocation = Boolean(userPincode || userCity || userDistrict || userState);
 
     return (
-        <div className="max-w-7xl mx-auto relative grid grid-cols-1 lg:grid-cols-5 gap-6 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 relative grid grid-cols-1 lg:grid-cols-5 gap-6 pb-6">
             {/* Sidebar Component */}
             <div className="lg:sticky lg:top-24 self-start max-lg:static max-lg:w-full">
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white pb-1">

@@ -48,9 +48,9 @@ export default function ServicesSection() {
                             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-widest mb-2">
                                 <Sparkles size={14} /> {t(lang, "services_what_we_offer")}
                             </div>
-                            <h1 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] text-slate-900 dark:text-white">
+                            <h2 className="text-3xl sm:text-4xl font-[NeuwMachinaBold] text-slate-900 dark:text-white">
                                 {t(lang, "services_heading")} <span className="text-gradient">{t(lang, "services_heading_2")}</span>
-                            </h1>
+                            </h2>
                             <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-xl">
                                 {t(lang, "services_subtitle")}
                             </p>

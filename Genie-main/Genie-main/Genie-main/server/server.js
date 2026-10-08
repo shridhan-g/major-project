@@ -173,6 +173,40 @@ async function seedIfNeeded() {
       console.log("Service details seeded successfully.");
     }
 
+    // Ensure Painting & Waterproofing has latest categories and services
+    const paintingDetail = await ServiceDetail.findOne({ serviceName: "Painting & Waterproofing" });
+    const paintingData = servicesDetailsData["Painting & Waterproofing"];
+    if (paintingData) {
+      const processedSubcategories = new Map();
+      if (paintingData.subcategories) {
+        for (const [subCatName, subCatDetails] of Object.entries(paintingData.subcategories)) {
+          let processedSubCategory = { image: subCatDetails.image };
+          if (subCatDetails.serviceTypes) {
+            processedSubCategory.serviceTypes = new Map();
+            for (const [stName, stDetails] of Object.entries(subCatDetails.serviceTypes)) {
+              processedSubCategory.serviceTypes.set(stName, {
+                image: stDetails.image,
+                categories: stDetails.categories,
+              });
+            }
+          }
+          if (subCatDetails.categories) {
+            processedSubCategory.categories = subCatDetails.categories;
+          }
+          processedSubcategories.set(subCatName, processedSubCategory);
+        }
+      }
+      await ServiceDetail.findOneAndUpdate(
+        { serviceName: "Painting & Waterproofing" },
+        {
+          serviceName: "Painting & Waterproofing",
+          subcategories: processedSubcategories,
+          services: paintingData.services || [],
+        },
+        { upsert: true, new: true }
+      );
+    }
+
     // Seed regular users
     const savedUsers = [];
     for (const u of USERS) {

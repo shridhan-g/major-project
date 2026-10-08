@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { login } from "../utils/api";
-import { LogIn } from "lucide-react";
+import { LogIn, ShieldCheck } from "lucide-react";
 import { useLang } from "../context/LanguageContext";
 import { t } from "../utils/translations";
 
 export default function Login({ onLoginSuccess, onClose, onSwitchToRegister }) {
+    const navigate = useNavigate();
     const [userData, setUserData] = useState({ emailOrPhone: "", password: "" });
     const [error, setError] = useState("");
     const { lang } = useLang();
@@ -18,13 +20,17 @@ export default function Login({ onLoginSuccess, onClose, onSwitchToRegister }) {
         setError("");
         try {
             const loginData = {
-                email: userData.emailOrPhone.includes("@") ? userData.emailOrPhone : undefined,
-                phone: !userData.emailOrPhone.includes("@") ? userData.emailOrPhone : undefined,
+                email: userData.emailOrPhone.includes("@") ? userData.emailOrPhone.trim().toLowerCase() : undefined,
+                phone: !userData.emailOrPhone.includes("@") ? userData.emailOrPhone.trim() : undefined,
                 password: userData.password,
             };
             const response = await login(loginData);
             onLoginSuccess(response.user);
             onClose();
+
+            if (response.user?.role === "admin") {
+                navigate("/admin");
+            }
         } catch (error) {
             setError(error.msg || "Invalid Credentials");
         }
@@ -87,6 +93,17 @@ export default function Login({ onLoginSuccess, onClose, onSwitchToRegister }) {
                         {t(lang, "login_register_now")}
                     </span>
                 </h1>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700/60 text-center">
+                    <Link
+                        to="/admin"
+                        onClick={onClose}
+                        className="text-xs text-slate-500 dark:text-slate-400 hover:text-orange-500 dark:hover:text-orange-400 transition-colors inline-flex items-center gap-1.5 justify-center"
+                    >
+                        <ShieldCheck size={14} className="text-orange-500" />
+                        <span>Administrator? <span className="font-semibold underline">Admin Portal Login</span></span>
+                    </Link>
+                </div>
             </form>
         </>
     );
